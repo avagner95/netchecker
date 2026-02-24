@@ -22,6 +22,7 @@ func NewApp(AppName string) (*App, error) {
 
 	a := &App{
 		cfg:     cfg,
+		version: Version,
 		cfgPath: path,
 		dbPath:  dbPath,
 		store:   st,

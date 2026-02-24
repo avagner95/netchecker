@@ -10,6 +10,7 @@ import (
 
 type App struct {
 	mu      sync.RWMutex
+	version string
 	cfg     config.Config
 	cfgPath string
 	dbPath  string

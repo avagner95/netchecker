@@ -1,5 +1,5 @@
 import {Events} from "@wailsio/runtime";
-import {GreetService} from "../bindings/changeme";
+import {GreetService} from "../bindings/netchecker";
 
 const resultElement = document.getElementById('result');
 const timeElement = document.getElementById('time');

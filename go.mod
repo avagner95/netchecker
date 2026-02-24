@@ -1,4 +1,4 @@
-module changeme
+module netchecker
 
 go 1.25
 

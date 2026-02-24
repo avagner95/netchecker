@@ -1,4 +1,6 @@
-package model
+package config
+
+const FileConfig = "config.json"
 
 type Target struct {
 	Enabled      bool   `json:"enabled"`

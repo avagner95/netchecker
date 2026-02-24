@@ -4,6 +4,9 @@ import (
 	"embed"
 	_ "embed"
 	"log"
+	"netchecker/internal/logging"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -28,7 +31,24 @@ func init() {
 // and starts a goroutine that emits a time-based event every second. It subsequently runs the application and
 // logs any error that might occur.
 func main() {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	appDir := filepath.Join(configDir, "netchecker")
+	logDir := filepath.Join(appDir, "logs")
 
+	_, err = logging.Init(logging.Options{
+		LogDir:     logDir,
+		Filename:   "netchecker.log",
+		MaxSizeMB:  10,
+		MaxBackups: 10,
+		Compress:   true,
+		AlsoStdout: true, // dev
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
 	// 'Assets' configures the asset server with the 'FS' variable pointing to the frontend files.
@@ -75,7 +95,7 @@ func main() {
 	}()
 
 	// Run the application. This blocks until the application has been exited.
-	err := app.Run()
+	err = app.Run()
 
 	// If an error occurred while running the application, log it and exit.
 	if err != nil {

@@ -1,38 +1,35 @@
-package confilg
+package config
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	model "netchecker/internal/models"
 	"os"
 	"path/filepath"
 )
 
-const ConfigFile = "config.json"
-
-func DefaultConfig() model.Config {
-	return model.Config{
-		Ping: model.PingSettings{
+func DefaultConfig() Config {
+	return Config{
+		Ping: PingSettings{
 			IntervalMs: 1000,
 			TimeoutMs:  1000,
 			Payload:    56,
 		},
-		Gateway: model.GatewaySettings{
+		Gateway: GatewaySettings{
 			Enabled: true,
 		},
-		Targets: []model.Target{
+		Targets: []Target{
 			{Enabled: true, TraceEnabled: true, Name: "Google DNS", Address: "8.8.8.8"},
 			{Enabled: true, TraceEnabled: false, Name: "DNS", Address: "1.1.1.1"},
 		},
-		Trace: model.TraceTriggers{
+		Trace: TraceTriggers{
 			OnStart: true,
-			Loss: model.TraceLossTrigger{
+			Loss: TraceLossTrigger{
 				Enabled: true,
 				Percent: 10,
 				LastN:   10,
 			},
-			HighRTT: model.TraceHighRTTTrigger{
+			HighRTT: TraceHighRTTTrigger{
 				Enabled: true,
 				RTTms:   700,
 				Percent: 10,
@@ -43,12 +40,12 @@ func DefaultConfig() model.Config {
 	}
 }
 
-func ConfigPath(AppName string) (string, error) {
+func Path(AppName string) (string, error) {
 	dir, err := os.UserConfigDir()
 	if err != nil {
 		return "", fmt.Errorf("os.UserConfigDir: %w", err)
 	}
-	return filepath.Join(dir, AppName, ConfigFile), nil
+	return filepath.Join(dir, AppName, FileConfig), nil
 }
 
 func EnsureDir(path string) error {
@@ -59,7 +56,7 @@ func EnsureDir(path string) error {
 func LoadOrCreate[T any](defaultValue T, AppName string) (T, string, error) {
 	var zero T
 
-	path, err := ConfigPath(AppName)
+	path, err := Path(AppName)
 	if err != nil {
 		return zero, "", err
 	}

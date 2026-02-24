@@ -7,10 +7,6 @@ import (
 	"path/filepath"
 )
 
-type SQLiteStore struct {
-	db *sql.DB
-}
-
 func OpenSQLite(path string) (*SQLiteStore, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return nil, fmt.Errorf("mkdir data dir: %w", err)

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"netchecker/internal/config"
 	"netchecker/internal/monitor"
 	"netchecker/internal/storage"
@@ -24,9 +25,9 @@ func NewApp(AppName string) (*App, error) {
 	configDir, err := os.UserConfigDir()
 	appDir := filepath.Join(configDir, AppName)
 	a := &App{
-
 		cfg:     cfg,
 		version: Version,
+		running: false,
 		AppDir:  appDir,
 		cfgPath: path,
 		DbPath:  dbPath,
@@ -34,4 +35,22 @@ func NewApp(AppName string) (*App, error) {
 	}
 	a.mon = monitor.NewMonitor(st, cfg)
 	return a, nil
+}
+
+func (a *App) Start() bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.running {
+		return false
+	}
+	a.running = true
+
+	ctx, cancel := context.WithCancel(context.Background())
+	a.cancel = cancel
+
+	if a.mon != nil {
+		a.mon.UpdateConfig(a.cfg)
+		go a.mon.Run(ctx)
+	}
+	return true
 }

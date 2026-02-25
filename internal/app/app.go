@@ -2,11 +2,14 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"netchecker/internal/config"
 	"netchecker/internal/monitor"
 	"netchecker/internal/storage"
 	"os"
 	"path/filepath"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 func NewApp(AppName string) (*App, error) {
@@ -44,12 +47,16 @@ func (a *App) IsRunning() bool {
 }
 
 func (a *App) Start() bool {
+
 	a.mu.Lock()
+
 	defer a.mu.Unlock()
 	if a.running {
 		return false
 	}
 	a.running = true
+	app := application.Get()
+	app.Event.Emit("app:running", a.running)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	a.cancel = cancel
@@ -63,11 +70,14 @@ func (a *App) Start() bool {
 
 func (a *App) Stop() bool {
 	a.mu.Lock()
+	fmt.Println("stopping")
 	defer a.mu.Unlock()
 	if !a.running {
 		return false
 	}
 	a.running = false
+	app := application.Get()
+	app.Event.Emit("app:running", a.running)
 	if a.cancel != nil {
 		a.cancel()
 		a.cancel = nil

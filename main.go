@@ -26,6 +26,7 @@ func init() {
 	// and provide a strongly typed JS/TS API for them.
 	application.RegisterEvent[string]("time")
 	application.RegisterEvent[string]("app:size")
+	application.RegisterEvent[bool]("app:running")
 }
 
 // main function serves as the application's entry point. It initializes the application, creates a window,

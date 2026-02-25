@@ -37,6 +37,12 @@ func NewApp(AppName string) (*App, error) {
 	return a, nil
 }
 
+func (a *App) IsRunning() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.running
+}
+
 func (a *App) Start() bool {
 	a.mu.Lock()
 	defer a.mu.Unlock()

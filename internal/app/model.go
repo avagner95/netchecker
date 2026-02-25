@@ -11,6 +11,7 @@ import (
 type App struct {
 	mu      sync.RWMutex
 	version string
+	running bool
 	AppDir  string
 	cfg     config.Config
 	cfgPath string

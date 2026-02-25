@@ -3,7 +3,6 @@ package main
 import (
 	"embed"
 	_ "embed"
-	"fmt"
 	"log"
 	appsvc "netchecker/internal/app"
 	"netchecker/internal/helpers"
@@ -26,7 +25,7 @@ func init() {
 	// This is not required, but the binding generator will pick up registered events
 	// and provide a strongly typed JS/TS API for them.
 	application.RegisterEvent[string]("time")
-	application.RegisterEvent[string]("db:size")
+	application.RegisterEvent[string]("app:size")
 }
 
 // main function serves as the application's entry point. It initializes the application, creates a window,
@@ -99,23 +98,18 @@ func main() {
 		}
 	}()
 	go func() {
-		fmt.Println("Starting db:size watcher")
-		ticker := time.NewTicker(10 * time.Second)
+
+		ticker := time.NewTicker(1 * time.Second)
 		defer ticker.Stop()
 
-		var last int64 = -1
 		check := func() {
 			size, err := helpers.FolderSize(NCApp.AppDir)
+
 			if err != nil {
-
 				return
 			}
 
-			if size == last {
-				return
-			}
-			last = size
-			app.Event.Emit("db:size", helpers.HumanBytes(size))
+			app.Event.Emit("app:size", helpers.HumanBytes(size))
 		}
 
 		check()

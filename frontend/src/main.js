@@ -17,7 +17,6 @@ window.doGreet = async () => {
 }
 
 
-Events.On("db:size", (ev) => {
-    console.log(ev);
-    document.getElementById("db_size").innerText = ev.data;
+Events.On("app:size", (ev) => {
+    document.getElementById("db_size").innerText = "Size: "  + ev.data;
 });

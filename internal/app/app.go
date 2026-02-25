@@ -54,3 +54,17 @@ func (a *App) Start() bool {
 	}
 	return true
 }
+
+func (a *App) Stop() bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if !a.running {
+		return false
+	}
+	a.running = false
+	if a.cancel != nil {
+		a.cancel()
+		a.cancel = nil
+	}
+	return true
+}

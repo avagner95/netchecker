@@ -3,12 +3,22 @@ import {App} from "../bindings/netchecker/internal/app";
 
 let running = false;
 
-document.getElementById('btnStartStop').addEventListener('click', () => {
+function setActiveStatus(status) {
+    let btnText = status ? "Stop" : "Start";
+    let StsText = status ? "Running" : "Stopped";
+    let StsStatus = status ? "ok" : "muted";
+    document.getElementById("btnStartStop").innerText = btnText;
+    document.getElementById("app_sts_text").innerText = StsText;
+    document.getElementById("app_sts_run").classList.remove('ok', 'muted')
+    document.getElementById("app_sts_run").classList.add(StsStatus)
+}
+
+document.getElementById('btnStartStop').addEventListener('click', async () => {
     console.log("Starting app");
     if (!running)
-        App.Start();
+        await App.Start();
     else
-        App.Stop()
+        await App.Stop()
 })
 console.log("Starting app");
 console.log(App)
@@ -20,14 +30,14 @@ Events.On("app:size", (ev) => {
 
 Events.On("app:running", (ev) => {
     running = ev.data;
-    let btnText = running ? "Stop" : "Start";
-    let StsText = running ? "Running" : "Stopped";
-    let StsStatus = running ? "ok" : "muted";
-    document.getElementById("btnStartStop").innerText = btnText;
-    document.getElementById("app_sts_text").innerText = StsText;
-    document.getElementById("app_sts_run").classList.remove('ok', 'muted')
-    document.getElementById("app_sts_run").classList.add(StsStatus)
-
-
+    setActiveStatus(running);
     // тут включай/выключай кнопки, показывай статус и т.д.
 });
+
+window.addEventListener("DOMContentLoaded", async (event) => {
+    console.log("Page is fully loaded");
+    running = await App.IsRunning();
+    console.log("App is running:", running);
+    setActiveStatus(running);
+});
+

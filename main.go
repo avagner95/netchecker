@@ -3,10 +3,11 @@ package main
 import (
 	"embed"
 	_ "embed"
+	"fmt"
 	"log"
+	appsvc "netchecker/internal/app"
+	"netchecker/internal/helpers"
 	"netchecker/internal/logging"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -25,21 +26,21 @@ func init() {
 	// This is not required, but the binding generator will pick up registered events
 	// and provide a strongly typed JS/TS API for them.
 	application.RegisterEvent[string]("time")
+	application.RegisterEvent[string]("db:size")
 }
 
 // main function serves as the application's entry point. It initializes the application, creates a window,
 // and starts a goroutine that emits a time-based event every second. It subsequently runs the application and
 // logs any error that might occur.
 func main() {
-	configDir, err := os.UserConfigDir()
+	AppName := "netchecker"
+
+	NCApp, err := appsvc.NewApp(AppName)
 	if err != nil {
 		log.Fatal(err)
 	}
-	appDir := filepath.Join(configDir, "netchecker")
-	logDir := filepath.Join(appDir, "logs")
-
 	_, err = logging.Init(logging.Options{
-		LogDir:     logDir,
+		LogDir:     NCApp.AppDir,
 		Filename:   "netchecker.log",
 		MaxSizeMB:  10,
 		MaxBackups: 10,
@@ -49,16 +50,19 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
 	// 'Assets' configures the asset server with the 'FS' variable pointing to the frontend files.
 	// 'Bind' is a list of Go struct instances. The frontend has access to the methods of these instances.
 	// 'Mac' options tailor the application when running an macOS.
+	// svc, err := appsvc.NewApp(AppName)
 	app := application.New(application.Options{
-		Name:        "netchecker",
+		Name:        AppName,
 		Description: "A demo of using raw HTML & CSS",
 		Services: []application.Service{
 			application.NewService(&GreetService{}),
+			application.NewService(NCApp),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
@@ -74,7 +78,7 @@ func main() {
 	// 'BackgroundColour' is the background colour of the window.
 	// 'URL' is the URL that will be loaded into the webview.
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title: "Window 1",
+		Title: "NetChecker",
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
 			Backdrop:                application.MacBackdropTranslucent,
@@ -89,8 +93,35 @@ func main() {
 	go func() {
 		for {
 			now := time.Now().Format(time.RFC1123)
+
 			app.Event.Emit("time", now)
 			time.Sleep(time.Second)
+		}
+	}()
+	go func() {
+		fmt.Println("Starting db:size watcher")
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
+
+		var last int64 = -1
+		check := func() {
+			size, err := helpers.FolderSize(NCApp.AppDir)
+			if err != nil {
+
+				return
+			}
+
+			if size == last {
+				return
+			}
+			last = size
+			app.Event.Emit("db:size", helpers.HumanBytes(size))
+		}
+
+		check()
+
+		for range ticker.C {
+			check()
 		}
 	}()
 

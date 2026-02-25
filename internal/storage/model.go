@@ -1,6 +1,9 @@
 package storage
 
-import "database/sql"
+import (
+	"database/sql"
+	_ "github.com/mattn/go-sqlite3"
+)
 
 type Row struct {
 	TsMs  int64

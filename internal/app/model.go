@@ -11,10 +11,10 @@ import (
 type App struct {
 	mu      sync.RWMutex
 	version string
+	AppDir  string
 	cfg     config.Config
 	cfgPath string
-	dbPath  string
-	running bool
+	DbPath  string
 	store   *storage.SQLiteStore
 	mon     *monitor.Monitor
 	cancel  context.CancelFunc

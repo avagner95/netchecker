@@ -4,6 +4,8 @@ import (
 	"netchecker/internal/config"
 	"netchecker/internal/monitor"
 	"netchecker/internal/storage"
+	"os"
+	"path/filepath"
 )
 
 func NewApp(AppName string) (*App, error) {
@@ -19,14 +21,16 @@ func NewApp(AppName string) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	configDir, err := os.UserConfigDir()
+	appDir := filepath.Join(configDir, AppName)
 	a := &App{
+
 		cfg:     cfg,
 		version: Version,
+		AppDir:  appDir,
 		cfgPath: path,
-		dbPath:  dbPath,
+		DbPath:  dbPath,
 		store:   st,
-		running: false,
 	}
 	a.mon = monitor.NewMonitor(st, cfg)
 	return a, nil

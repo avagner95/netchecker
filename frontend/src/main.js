@@ -16,6 +16,8 @@ window.doGreet = async () => {
     }
 }
 
-Events.On('time', (time) => {
-    timeElement.innerText = time.data;
+
+Events.On("db:size", (ev) => {
+    console.log(ev);
+    document.getElementById("db_size").innerText = ev.data;
 });

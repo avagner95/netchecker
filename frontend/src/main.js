@@ -371,26 +371,26 @@ function setValue(id, v) {
 }
 function initExportCSV() {
     const btn = document.getElementById("btnExportCsv");
-    const statusEl = document.getElementById("exportCsvStatus");
+
     if (!btn) return;
 
     btn.addEventListener("click", async () => {
         try {
             btn.disabled = true;
-            if (statusEl) statusEl.textContent = "Exporting...";
+            toast("Exporting...");
 
             // Вызов Go-метода (Wails bindings)
             const savedPath = await App.ExportAllToCSVGZWithDialog();
 
             if (!savedPath) {
-                if (statusEl) statusEl.textContent = "Cancelled";
+                toast("Cancelled");
                 return;
             }
 
-            if (statusEl) statusEl.textContent = `Saved: ${savedPath}`;
+            toast`Saved: ${savedPath}`;
         } catch (e) {
             console.error(e);
-            if (statusEl) statusEl.textContent = `Export failed: ${e?.message || e}`;
+            toast(`Export failed: ${e?.message || e}`);
         } finally {
             btn.disabled = false;
         }

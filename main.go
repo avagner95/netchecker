@@ -7,9 +7,12 @@ import (
 	appsvc "netchecker/internal/app"
 	"netchecker/internal/helpers"
 	"netchecker/internal/logging"
+	"runtime"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
+	"github.com/wailsapp/wails/v3/pkg/icons"
 )
 
 // Wails uses Go's `embed` package to embed the frontend files into the binary.
@@ -71,14 +74,66 @@ func main() {
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
 	})
+	mainWindow := app.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:  "NetChecker",
+		Name:   "main",
+		URL:    "/",
+		Hidden: true,
 
+		BackgroundColour: application.NewRGB(27, 38, 54),
+
+		Mac: application.MacWindow{
+			InvisibleTitleBarHeight: 50,
+			Backdrop:                application.MacBackdropTranslucent,
+			TitleBar:                application.MacTitleBarHiddenInset,
+		},
+
+		Windows: application.WindowsWindow{
+			HiddenOnTaskbar: true,
+		},
+	})
+	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
+		mainWindow.Hide()
+		e.Cancel()
+	})
+
+	tray := app.SystemTray.New()
+	// TODO change icons
+	if runtime.GOOS == "darwin" {
+
+		tray.SetTemplateIcon(icons.WailsLogoWhiteTransparent)
+	} else {
+		tray.SetIcon(icons.WailsLogoBlackTransparent)
+	}
+
+	menu := app.NewMenu()
+
+	menu.Add("Open / Close").OnClick(func(ctx *application.Context) {
+		if mainWindow.IsVisible() {
+			mainWindow.Hide()
+		} else {
+			mainWindow.Show()
+			mainWindow.Focus()
+		}
+	})
+
+	menu.AddSeparator()
+
+	menu.Add("Quit").OnClick(func(ctx *application.Context) {
+		app.Quit()
+	})
+
+	tray.SetMenu(menu)
+
+	tray.AttachWindow(mainWindow)
 	// Create a new window with the necessary options.
 	// 'Title' is the title of the window.
 	// 'Mac' options tailor the window when running on macOS.
 	// 'BackgroundColour' is the background colour of the window.
 	// 'URL' is the URL that will be loaded into the webview.
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title: "NetChecker",
+		Title:  "NetChecker",
+		Hidden: true,
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
 			Backdrop:                application.MacBackdropTranslucent,

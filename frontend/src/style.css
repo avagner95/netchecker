@@ -2,35 +2,38 @@
     --bg1: #0b1322;
     --bg2: #0a1528;
 
-    /* Core colors */
     --text: rgba(255, 255, 255, 0.92);
-    --text-muted: rgba(255, 255, 255, 0.55);
-    --muted: rgba(255, 255, 255, 0.58);
+    --text-muted: rgba(255, 255, 255, 0.58);
 
-    /* Surfaces & borders */
     --glass: rgba(255, 255, 255, 0.06);
     --border: rgba(255, 255, 255, 0.10);
-    --surface-1: rgba(255, 255, 255, 0.03);
-    --surface-2: rgba(255, 255, 255, 0.04);
-    --surface-head: rgba(255, 255, 255, 0.02);
-    --border-subtle: rgba(255, 255, 255, 0.06);
     --border-soft: rgba(255, 255, 255, 0.08);
+    --surface-1: rgba(255, 255, 255, 0.035);
+    --surface-2: rgba(255, 255, 255, 0.05);
 
-    /* Accents */
     --spruce: #18b19a;
     --spruce2: #0ea28c;
     --warn: #ffbd2e;
     --down: #ff5f56;
 
-    /* Layout */
+    /* Base sizing (desktop) */
     --gap: 14px;
     --radius-lg: 14px;
     --radius-md: 12px;
     --radius-sm: 10px;
 
-    /* Controls */
     --btn-h: 34px;
     --btn-h-sm: 28px;
+
+    --pad-shell: 16px;
+    --pad-panel: 14px;
+
+    /* Scrollbar palette (Windows) */
+    --sb-track: rgba(255, 255, 255, 0.03);
+    --sb-thumb: rgba(255, 255, 255, 0.16);
+    --sb-thumb2: rgba(255, 255, 255, 0.10);
+    --sb-border: rgba(255, 255, 255, 0.10);
+    --sb-hover: rgba(24, 177, 154, 0.22);
 }
 
 * { box-sizing: border-box; }
@@ -47,7 +50,7 @@ body {
     overflow: hidden;
 }
 
-/* ===== Background (stars + noise) ===== */
+/* Background */
 .bg {
     position: fixed;
     inset: 0;
@@ -62,6 +65,7 @@ body {
     filter: blur(2px);
     opacity: 0.9;
 }
+
 .bg-noise {
     position: absolute;
     inset: 0;
@@ -69,6 +73,7 @@ body {
     opacity: 0.10;
     mix-blend-mode: overlay;
 }
+
 .bg-stars {
     position: absolute;
     inset: 0;
@@ -81,23 +86,23 @@ body {
     opacity: 0.35;
 }
 
-/* ===== Window layout ===== */
-.window {
+/* App shell */
+.app {
     position: relative;
     z-index: 1;
-
-    /* ВАЖНО: topbar и statusbar всегда на месте */
     height: 100vh;
-    display: flex;
-    flex-direction: column;
-
-    padding: 16px;
-    gap: var(--gap);
-
-    min-height: 0; /* чтобы центр нормально скроллился внутри */
 }
 
-/* ===== Glass ===== */
+.shell {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: var(--pad-shell);
+    gap: var(--gap);
+    min-height: 0;
+}
+
+/* Glass */
 .glass {
     background: var(--glass);
     border: 1px solid var(--border);
@@ -105,45 +110,60 @@ body {
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     box-shadow: 0 16px 45px rgba(0, 0, 0, 0.35);
-    margin-top: 10px;
-    padding-top: 10px;
-    padding-left: 10px;
 }
 
-/* ===== Topbar ===== */
+/* Topbar */
 .topbar {
-    flex: 0 0 auto; /* закреплён сверху */
+    flex: 0 0 auto;
     height: 56px;
+    padding: 0 12px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    position: relative;
-    padding: 0 14px;
+    justify-content: space-between;
+    gap: 12px;
 }
-.topbar-center {
-    font-weight: 650;
-    letter-spacing: 0.4px;
-    opacity: 0.92;
-}
-.topbar-right {
-    position: absolute;
-    right: 14px;
+
+.top-left {
     display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
     gap: 10px;
 }
 
-/* ===== Topbar Tabs ===== */
+.brand-title {
+    font-weight: 820;
+    letter-spacing: .35px;
+    white-space: nowrap;
+}
+
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 0 0 auto;
+}
+
+/* Tabs */
 .navtabs {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-left: 14px;
+    min-width: 0;
 }
+
 .navtab {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     text-decoration: none;
+    height: var(--btn-h);
+    padding: 0 12px;
 
     border: 1px solid var(--border-soft);
     background: rgba(255, 255, 255, 0.04);
@@ -152,18 +172,40 @@ body {
     cursor: pointer;
     font-weight: 750;
     letter-spacing: 0.2px;
-    height: var(--btn-h);
-    padding: 0 12px;
     border-radius: var(--radius-sm);
     transition: 160ms ease;
+    white-space: nowrap;
 }
+
 .navtab:hover {
     background: rgba(24, 177, 154, 0.10);
     border-color: rgba(24, 177, 154, 0.18);
     color: rgba(255, 255, 255, 0.90);
 }
 
-/* ===== Активный таб (стабильно, без :has) ===== */
+/* Active tab (hash-based, no :has) */
+#settings {
+    display: block;
+}
+
+.tabpanel {
+    display: none;
+    height: 100%;
+    min-height: 0;
+}
+
+#settings:target {
+    display: block;
+}
+
+#dashboard:target {
+    display: block;
+}
+
+#dashboard:target ~ #settings {
+    display: none;
+}
+
 body:not(:target) .navtab[href="#settings"],
 #settings:target ~ * .navtab[href="#settings"],
 #dashboard:target ~ * .navtab[href="#dashboard"] {
@@ -173,100 +215,140 @@ body:not(:target) .navtab[href="#settings"],
     box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
 }
 
-/* ===== Center content (between topbar and statusbar) ===== */
+/* Content area */
 .content {
     flex: 1 1 auto;
     min-height: 0;
-    overflow: hidden; /* важно — чтобы не было наложений/скролла на body */
-    display: block;
+    overflow: hidden;
 }
 
-/* ===== Tab panels (СТАБИЛЬНО БЕЗ ПРОПАДАНИЙ) ===== */
-.tabpanel {
-    display: none;
-    height: 100%;
+/* Panels */
+.panel {
+    padding: var(--pad-panel);
     min-height: 0;
 }
 
-/* default: settings */
-#settings { display: block; }
-
-/* explicit */
-#settings:target { display: block; }
-#dashboard:target { display: block; }
-
-/* если открыт dashboard — скрываем settings (важно: dashboard идёт ПЕРВЫМ в HTML) */
-#dashboard:target ~ #settings { display: none; }
-
-.tabpanel[hidden] {
-    display: none !important;
+.panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
-/* ===== Split inside SETTINGS tab =====
-   Settings (left) fixed, Targets (right) fills remaining space */
-.settings-split{
+.panel-title {
+    font-weight: 760;
+    letter-spacing: .2px;
+}
+
+.panel-sub {
+    color: var(--text-muted);
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: .9;
+}
+
+/* Settings layout */
+.settings-grid {
     height: 100%;
     min-height: 0;
     display: grid;
     grid-template-columns: 420px 1fr;
     gap: var(--gap);
-    align-items: stretch;
 }
 
-/* Left settings panel scrolls if needed */
-.settings-left{
-    min-height: 0;
+/* Settings panel scrolls */
+.settings-panel {
     overflow: auto;
 }
 
-/* Right targets fills remaining space and has internal scroll */
-.targets-right{
-    min-height: 0;
-    min-width: 0;
-    overflow: hidden;
+/* Stack cards */
+.stack {
     display: flex;
     flex-direction: column;
+    gap: 12px;
 }
 
-/* Make targets area scroll inside */
-.targets-wrap{
-    height: 100%;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-}
-.targets{
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: auto;
-    padding-right: 2px;
+/* Cards */
+.card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
 }
 
-/* Responsive: stack */
-@media (max-width: 1000px){
-    .settings-split{
-        grid-template-columns: 1fr;
-    }
-    .targets-right{ overflow: visible; }
+.card-title {
+    font-size: 13px;
+    font-weight: 700;
+    opacity: .88;
+    margin-bottom: 10px;
 }
 
-/* ===== Panels / titles ===== */
-.panel { padding: 14px; }
+/* Fields: user-friendly layout */
+.field {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 6px 0;
+}
 
-.panel-title {
+.field.inline {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 10px;
+}
+
+.label {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.control {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    font-weight: 650;
-    margin-bottom: 12px;
-    opacity: 0.92;
-}
-.panel-right {
-    font-weight: 600;
-    color: var(--text-muted);
+    gap: 8px;
 }
 
-/* ===== Buttons ===== */
+.sub {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.disabled {
+    opacity: .75;
+}
+
+/* Inputs */
+.input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 8px 10px;
+    color: #fff;
+    width: 110px;
+    font-weight: 650;
+}
+
+.input:focus {
+    outline: none;
+    border-color: rgba(100, 180, 255, 0.60);
+    box-shadow: 0 0 0 2px rgba(100, 180, 255, 0.15);
+}
+
+.input:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.unit {
+    opacity: 0.65;
+    font-size: 12px;
+}
+
+/* Buttons */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -279,57 +361,52 @@ body:not(:target) .navtab[href="#settings"],
     background: rgba(255, 255, 255, 0.06);
     color: rgba(255, 255, 255, 0.90);
     cursor: pointer;
-    font-weight: 700;
+    font-weight: 760;
+    transition: 160ms ease;
 }
+
+.btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
 .btn.primary {
     border-color: rgba(24, 177, 154, 0.30);
     background: linear-gradient(180deg, rgba(24, 177, 154, 0.95), rgba(14, 162, 140, 0.95));
     box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
 }
-.btn.secondary { background: rgba(255, 255, 255, 0.07); }
+
+.btn.primary:hover {
+    filter: brightness(1.02);
+}
+
+.btn.secondary {
+    background: rgba(255, 255, 255, 0.07);
+}
+
 .btn.ghost {
     background: transparent;
     border-color: var(--border);
-    color: rgba(255, 255, 255, 0.72);
-}
-.btn.small {
-    height: var(--btn-h-sm);
-    padding: 0 10px;
-    border-radius: 9px;
-    font-size: 12px;
-}
-.full { width: 100%; }
-
-/* ===== Icon button ===== */
-.icon-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 9px;
-    border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.85);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.icon-btn.danger:hover {
-    border-color: rgba(255, 95, 86, 0.25);
-    background: rgba(255, 95, 86, 0.14);
+    color: rgba(255, 255, 255, 0.75);
 }
 
-/* ===== Toggle switch ===== */
+.full {
+    width: 100%;
+}
+
+/* Toggle */
 .toggle {
     position: relative;
     width: 42px;
     height: 24px;
     display: inline-block;
 }
+
 .toggle input {
     opacity: 0;
     width: 0;
     height: 0;
 }
+
 .slider {
     position: absolute;
     inset: 0;
@@ -338,6 +415,7 @@ body:not(:target) .navtab[href="#settings"],
     border-radius: 999px;
     transition: 180ms ease;
 }
+
 .slider:before {
     content: "";
     position: absolute;
@@ -350,162 +428,111 @@ body:not(:target) .navtab[href="#settings"],
     transition: 180ms ease;
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
 }
+
 .toggle input:checked + .slider {
     background: rgba(24, 177, 154, 0.22);
     border-color: rgba(24, 177, 154, 0.30);
 }
+
 .toggle input:checked + .slider:before {
     transform: translateX(18px);
     background: rgba(255, 255, 255, 0.95);
 }
-.toggle.small { width: 38px; height: 22px; }
-.toggle.small .slider:before { height: 16px; width: 16px; top: 2px; }
-.toggle.small input:checked + .slider:before { transform: translateX(16px); }
-.toggle input:disabled + .slider { opacity: 0.5; }
 
-/* ===== Settings layout ===== */
-.settings-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 32px;
-}
-.block-title {
-    font-size: 14px;
-    font-weight: 600;
-    opacity: 0.8;
-    margin-bottom: 6px;
-}
-.form-row {
-    display: grid;
-    grid-template-columns: 160px 120px 40px;
-    align-items: center;
-    gap: 12px;
-    padding: 5px 0;
-}
-.form-row.disabled { opacity: 0.75; }
-
-.input {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    border-radius: 6px;
-    padding: 6px 10px;
-    color: #fff;
-    width: 100px;
-}
-.input.inline {
-    width: 70px;
-    text-align: right;
-    padding: 4px 8px;
-    font-size: 12px;
-    border-color: rgba(255, 255, 255, 0.12);
-    transition: 0.2s ease;
-}
-.input.inline.small { width: 55px; }
-.input.inline:focus {
-    outline: none;
-    border-color: rgba(100, 180, 255, 0.60);
-    box-shadow: 0 0 0 2px rgba(100, 180, 255, 0.15);
-}
-.input:disabled,
-.input.inline:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
+.toggle input:disabled + .slider {
+    opacity: .5;
 }
 
-.unit {
-    text-align: left;
-    opacity: 0.6;
-    font-size: 12px;
-}
-
-/* ===== Targets table ===== */
-.sidebar {
-    width: 100%;
-    min-width: 0;
-    padding: 14px;
+/* Targets */
+.targets-panel {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    min-height: 0;
-}
-.sidebar h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 650;
-    opacity: 0.92;
-}
-.sidebar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    gap: 10px;
+    overflow: hidden;
 }
 
-.trow {
-    width: 100%;
+.targets-table {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.thead {
     display: grid;
-    grid-template-columns: 48px 1fr 64px 64px 84px 64px 48px;
+    grid-template-columns: 60px 70px 220px 1fr 56px;
+    gap: 8px;
+    padding: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.60);
+    font-size: 12px;
+}
+
+.th {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.center {
+    display: flex;
+    justify-content: center;
+}
+
+.right {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.tbody {
+    height: 100%;
+    min-height: 0;
+    overflow: auto;
+    padding: 8px;
+}
+
+/* Your JS probably renders rows; these styles are for rows you generate */
+.trow {
+    display: grid;
+    grid-template-columns: 60px 70px 220px 1fr 56px;
     gap: 8px;
     align-items: center;
     padding: 10px;
     border-radius: var(--radius-md);
-    border: 1px solid var(--border-subtle);
-    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.03);
     transition: 160ms ease;
+    margin-bottom: 8px;
 }
+
 .trow:hover {
     background: rgba(24, 177, 154, 0.08);
     border-color: rgba(24, 177, 154, 0.16);
 }
-.thead {
-    font-size: 12px;
-    color: var(--text-muted);
-    background: var(--surface-head);
-}
+
 .cell {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
 .editable {
     outline: none;
     padding: 6px 8px;
     border-radius: var(--radius-sm);
 }
+
 .editable:focus {
     background: rgba(0, 0, 0, 0.20);
     border: 1px solid rgba(24, 177, 154, 0.22);
 }
-.right { text-align: right; }
-.center { display: flex; justify-content: center; }
 
-/* Targets row with Name + Address */
-.trow-flex {
-    display: grid;
-    grid-template-columns: 60px 70px 220px 1fr 50px;
-    align-items: center;
-    gap: 8px;
-}
-.trow.thead.trow-flex {
-    font-size: 12px;
-    opacity: 0.6;
-}
-.trow-flex .cell.editable {
-    width: 100%;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.trow-flex > div:last-child {
-    display: flex;
-    justify-content: flex-end;
-}
-.trow-compact { min-height: 36px; }
-
-/* ===== Status bar ===== */
+/* Status bar */
 .statusbar {
-    flex: 0 0 auto; /* закреплён снизу */
+    flex: 0 0 auto;
     height: 40px;
     display: flex;
     align-items: center;
@@ -514,13 +541,30 @@ body:not(:target) .navtab[href="#settings"],
     font-size: 13px;
     color: rgba(255, 255, 255, 0.75);
 }
-.sep { color: rgba(255, 255, 255, 0.35); }
-.spacer { margin-left: auto; }
-.status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-.status-dot.ok { background: var(--spruce); }
-.status-dot.muted { background: rgba(255, 255, 255, 0.35); }
 
-/* ===== Dirty / errors ===== */
+.sep {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.spacer {
+    margin-left: auto;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-dot.ok {
+    background: var(--spruce);
+}
+
+.status-dot.muted {
+    background: rgba(255, 255, 255, 0.35);
+}
+
 .dirty-dot {
     display: inline-block;
     width: 8px;
@@ -528,33 +572,125 @@ body:not(:target) .navtab[href="#settings"],
     border-radius: 50%;
     background: var(--warn);
     box-shadow: 0 0 0 3px rgba(255, 189, 46, 0.12);
-    margin-left: 10px;
-}
-.row-error {
-    border-color: rgba(255, 95, 86, 0.28) !important;
-    background: rgba(255, 95, 86, 0.10) !important;
+    margin-right: 6px;
 }
 
-/* Optional: keep manual active class if JS sets it */
-.navtab.active {
-    background: rgba(24, 177, 154, 0.18);
-    border-color: rgba(24, 177, 154, 0.30);
-    color: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+/* ==============================
+   WINDOWS SCROLLBAR (beautiful)
+   Apply via .scrollbar class
+   ============================== */
+.scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--sb-thumb) transparent;
 }
 
-.toast {
-    position: fixed;
-    left: 50%;
-    bottom: 64px;
-    transform: translateX(-50%);
-    padding: 10px 12px;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(0, 0, 0, 0.35);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    color: rgba(255, 255, 255, 0.90);
-    font-size: 13px;
-    z-index: 9999;
+.scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--sb-thumb), var(--sb-thumb2));
+    border: 1px solid var(--sb-border);
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.12);
+}
+
+.scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--sb-hover), rgba(255, 255, 255, 0.14));
+    border-color: rgba(24, 177, 154, 0.22);
+}
+
+.scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* ==============================
+   COMPACT / QUARTER-SCREEN MODE
+   (very user-friendly)
+   ============================== */
+@media (max-width: 980px), (max-height: 720px) {
+    :root {
+        --gap: 10px;
+        --btn-h: 30px;
+        --pad-shell: 12px;
+        --pad-panel: 12px;
+    }
+
+    .topbar {
+        height: 50px;
+    }
+
+    .statusbar {
+        height: 34px;
+        font-size: 12px;
+    }
+
+    /* Stack layout: Settings above Targets */
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Reduce header rigidity */
+    .thead, .trow {
+        grid-template-columns: 52px 62px 1fr 1fr 48px;
+    }
+
+    /* If top-actions gets too wide, allow wrapping nicely */
+    .top-actions {
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+}
+
+/* Ultra compact: tiny windows */
+@media (max-width: 760px), (max-height: 600px) {
+    :root {
+        --gap: 8px;
+        --btn-h: 28px;
+    }
+
+    /* Make tabs tighter */
+    .navtab {
+        padding: 0 10px;
+        font-weight: 720;
+    }
+
+    /* Targets become more “card-like” and readable */
+    .thead {
+        display: none;
+    }
+
+    .trow {
+        grid-template-columns: 60px 1fr 48px;
+        grid-template-areas:
+      "on name actions"
+      "trace addr actions";
+        align-items: center;
+    }
+
+    .trow .cell:nth-child(1) {
+        grid-area: on;
+    }
+
+    .trow .cell:nth-child(2) {
+        grid-area: trace;
+    }
+
+    .trow .cell:nth-child(3) {
+        grid-area: name;
+    }
+
+    .trow .cell:nth-child(4) {
+        grid-area: addr;
+    }
+
+    .trow .cell:nth-child(5) {
+        grid-area: actions;
+    }
 }

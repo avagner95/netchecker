@@ -6,201 +6,227 @@
     <link href="./src/style.css" rel="stylesheet">
     <title>NetChecker</title>
 </head>
-<body>
-<div id="app">
-    <div class="window">
-        <div class="topbar glass">
-            <div style="position:absolute; left:14px; display:flex; gap:10px; align-items:center;">
-                <div style="font-weight:800; letter-spacing:.5px;">NetChecker</div>
 
-                <div class="navtabs">
+<body>
+<!-- Background -->
+<div aria-hidden="true" class="bg">
+    <div class="bg-glow"></div>
+    <div class="bg-stars"></div>
+    <div class="bg-noise"></div>
+</div>
+
+<div class="app" id="app">
+    <div class="shell">
+
+        <!-- TOP BAR -->
+        <header class="topbar glass">
+            <div class="top-left">
+                <div class="brand">
+                    <div class="brand-title">NetChecker</div>
+                </div>
+
+                <nav aria-label="Primary" class="navtabs">
                     <a class="navtab" href="#dashboard">Dashboard</a>
                     <a class="navtab" href="#settings">
                         <span class="dirty-dot" style="display:none" title="Unsaved changes"></span>
                         Settings
                     </a>
-                </div>
-
-
+                </nav>
             </div>
-            <div class="topbar-right">
-                <button id="btnSave" class="btn secondary">Save Configuration</button>
 
+            <div class="top-actions">
+                <button class="btn secondary" id="btnSave">Save</button>
+                <button class="btn" id="btnExportCsv">Export CSV (.gz)</button>
                 <button id="btnStartStop" class="btn primary">Start</button>
-                <div class="settings-block">
-                    <button id="btnExportCsv" class="btn">
-                        Export CSV (.gz)
-                    </button>
-
-
-                </div>
             </div>
+        </header>
 
-        </div>
+        <!-- CONTENT -->
+        <main class="content">
+            <section class="tabpanel" id="dashboard">
+                <!-- dashboard content -->
+            </section>
 
+            <section class="tabpanel" id="settings">
+                <div class="settings-grid">
 
-        <div class="content">
-            <div id="dashboard" class="tabpanel">
-
-            </div>
-
-            <div id="settings" class="tabpanel">
-                <div class="settings-split">
-
-                    <!-- LEFT: Settings -->
-                    <main class="settings-left glass panel">
-                        <div class="panel-title">
-                            <div>Settings</div>
+                    <!-- SETTINGS (left / top on compact) -->
+                    <section class="panel glass settings-panel scrollbar">
+                        <div class="panel-head">
+                            <div class="panel-title">Settings</div>
                         </div>
 
-                        <div class="settings-stack">
+                        <div class="stack">
 
-                            <!-- Ping -->
-                            <div class="glass block">
-                                <div class="block-title" style="margin-bottom:8px;">Ping</div>
+                            <div class="card">
+                                <div class="card-title">Ping</div>
 
-                                <div class="form-row">
-                                    <div class="inline-label">Interval</div>
-                                    <input id="ping_interval" class="input inline" type="number" min="250" step="50" value="1000">
-                                    <span class="unit">ms</span>
+                                <div class="field">
+                                    <div class="label">Interval</div>
+                                    <div class="control">
+                                        <input class="input" id="ping_interval" min="250" step="50" type="number"
+                                               value="1000">
+                                        <span class="unit">ms</span>
+                                    </div>
                                 </div>
 
-                                <div class="form-row">
-                                    <div class="inline-label">Timeout</div>
-                                    <input id="ping_timeout" class="input inline" type="number" min="200" step="50" value="1000">
-                                    <span class="unit">ms</span>
+                                <div class="field">
+                                    <div class="label">Timeout</div>
+                                    <div class="control">
+                                        <input class="input" id="ping_timeout" min="200" step="50" type="number"
+                                               value="1000">
+                                        <span class="unit">ms</span>
+                                    </div>
                                 </div>
 
-                                <div class="form-row">
-                                    <div class="inline-label">Payload</div>
-                                    <input id="ping_payload" class="input inline" type="number" min="0" max="1472" step="1" value="56">
-                                    <span class="unit">bytes</span>
+                                <div class="field">
+                                    <div class="label">Payload</div>
+                                    <div class="control">
+                                        <input class="input" id="ping_payload" max="1472" min="0" step="1" type="number"
+                                               value="56">
+                                        <span class="unit">bytes</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Traceroute -->
-                            <div class="glass block">
-                                <div class="block-title" style="margin-bottom:8px;">Traceroute</div>
+                            <div class="card">
+                                <div class="card-title">Traceroute</div>
 
-                                <div class="form-row" style="grid-template-columns: 160px 1fr;">
-                                    <div class="inline-label">On start</div>
+                                <div class="field inline">
+                                    <div class="label">On start</div>
                                     <label class="toggle">
                                         <input id="trace_onstart" type="checkbox" checked>
                                         <span class="slider"></span>
                                     </label>
                                 </div>
 
-                                <div class="form-row">
-                                    <div class="inline-label">Cooldown</div>
-                                    <input id="trace_cooldown" class="input inline" type="number" min="0" max="3600" step="30" value="300">
-                                    <span class="unit">sec</span>
+                                <div class="field">
+                                    <div class="label">Cooldown</div>
+                                    <div class="control">
+                                        <input class="input" id="trace_cooldown" max="3600" min="0" step="30"
+                                               type="number" value="300">
+                                        <span class="unit">sec</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Loss trigger -->
-                            <div class="glass block">
-                                <div class="block-title" style="margin-bottom:8px;">Traceroute Trigger: Packet loss</div>
+                            <div class="card">
+                                <div class="card-title">Trigger: Packet loss</div>
 
-                                <div class="form-row" style="grid-template-columns: 160px 1fr;">
-                                    <div class="inline-label">Enabled</div>
+                                <div class="field inline">
+                                    <div class="label">Enabled</div>
                                     <label class="toggle">
                                         <input id="loss_enabled" type="checkbox">
                                         <span class="slider"></span>
                                     </label>
                                 </div>
 
-                                <div id="loss_fields">
-                                    <div class="form-row disabled">
-                                        <div class="inline-label">Percent</div>
-                                        <input id="loss_percent" class="input inline small" type="number" min="1" max="100" step="1" value="10" disabled>
-                                        <span class="unit">%</span>
+                                <div class="sub" id="loss_fields">
+                                    <div class="field disabled">
+                                        <div class="label">Percent</div>
+                                        <div class="control">
+                                            <input class="input" disabled id="loss_percent" max="100" min="1"
+                                                   step="1" type="number" value="10">
+                                            <span class="unit">%</span>
+                                        </div>
                                     </div>
 
-                                    <div class="form-row disabled">
-                                        <div class="inline-label">Last N</div>
-                                        <input id="loss_lastn" class="input inline small" type="number" min="1" max="200" step="1" value="10" disabled>
-                                        <span class="unit">pkts</span>
+                                    <div class="field disabled">
+                                        <div class="label">Last N</div>
+                                        <div class="control">
+                                            <input class="input" disabled id="loss_lastn" max="200" min="1"
+                                                   step="1" type="number" value="10">
+                                            <span class="unit">pkts</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- RTT trigger -->
-                            <div class="glass block">
-                                <div class="block-title" style="margin-bottom:8px;">Traceroute Trigger: High RTT</div>
+                            <div class="card">
+                                <div class="card-title">Trigger: High RTT</div>
 
-                                <div class="form-row" style="grid-template-columns: 160px 1fr;">
-                                    <div class="inline-label">Enabled</div>
+                                <div class="field inline">
+                                    <div class="label">Enabled</div>
                                     <label class="toggle">
                                         <input id="rtt_enabled" type="checkbox">
                                         <span class="slider"></span>
                                     </label>
                                 </div>
 
-                                <div id="rtt_fields">
-                                    <div class="form-row disabled">
-                                        <div class="inline-label">RTT threshold</div>
-                                        <input id="rtt_threshold" class="input inline" type="number" min="1" max="60000" step="10" value="700" disabled>
-                                        <span class="unit">ms</span>
+                                <div class="sub" id="rtt_fields">
+                                    <div class="field disabled">
+                                        <div class="label">RTT threshold</div>
+                                        <div class="control">
+                                            <input class="input" disabled id="rtt_threshold" max="60000" min="1"
+                                                   step="10" type="number" value="700">
+                                            <span class="unit">ms</span>
+                                        </div>
                                     </div>
 
-                                    <div class="form-row disabled">
-                                        <div class="inline-label">Percent</div>
-                                        <input id="rtt_percent" class="input inline small" type="number" min="1" max="100" step="1" value="10" disabled>
-                                        <span class="unit">%</span>
+                                    <div class="field disabled">
+                                        <div class="label">Percent</div>
+                                        <div class="control">
+                                            <input class="input" disabled id="rtt_percent" max="100" min="1"
+                                                   step="1" type="number" value="10">
+                                            <span class="unit">%</span>
+                                        </div>
                                     </div>
 
-                                    <div class="form-row disabled">
-                                        <div class="inline-label">Last N</div>
-                                        <input id="rtt_lastn" class="input inline small" type="number" min="1" max="200" step="1" value="10" disabled>
-                                        <span class="unit">pkts</span>
+                                    <div class="field disabled">
+                                        <div class="label">Last N</div>
+                                        <div class="control">
+                                            <input class="input" disabled id="rtt_lastn" max="200" min="1" step="1"
+                                                   type="number" value="10">
+                                            <span class="unit">pkts</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                         </div>
-                    </main>
+                    </section>
 
-                    <!-- RIGHT: Targets (fills remaining space) -->
-                    <aside class="targets-right glass">
-                        <div class="sidebar-header" style="padding:12px 12px 0 12px;">
-                            <h2 style="margin:0;">Targets</h2>
+                    <!-- TARGETS (right / bottom on compact) -->
+                    <aside class="panel glass targets-panel">
+                        <div class="panel-head">
+                            <div class="panel-title">Targets</div>
+
                         </div>
 
-                        <div class="targets-wrap" style="padding:12px; padding-top:10px;">
-                            <div class="targets">
-                                <!-- Header -->
-                                <div class="trow thead trow-compact trow-flex">
-                                    <div class="center">On</div>
-                                    <div class="center">Trace</div>
-                                    <div>Name</div>
-                                    <div>IP / Hostname</div>
-                                    <div class="center"></div>
-                                </div>
-                                <div  id="targetsList"> </div>
-
-
+                        <div class="targets-table">
+                            <div class="thead">
+                                <div class="th center">On</div>
+                                <div class="th center">Trace</div>
+                                <div class="th">Name</div>
+                                <div class="th">IP / Hostname</div>
+                                <div class="th right"></div>
                             </div>
 
-                            <button id="addTarget" class="btn ghost full" style="margin-top:10px;">Add Target</button>
+                            <div class="tbody scrollbar" id="targetsList"></div>
                         </div>
+
+                        <button class="btn ghost full" id="addTarget">Add Target</button>
                     </aside>
 
                 </div>
-            </div>
-        </div>
-        <div class="statusbar glass">
+            </section>
+        </main>
+
+        <!-- STATUS BAR -->
+        <footer class="statusbar glass">
             <span id="app_sts_run" class="status-dot muted"></span>
             <span id="app_sts_text">stopped</span>
             <span class="sep">|</span>
             <span id="sb_trace">trace workers: 0/2 (q:0)</span>
             <span class="sep">|</span>
             <span id="db_size"></span>
-
             <span class="spacer"></span>
             <span id="sb_ver" class="muted">v0.0.0-dev</span>
-        </div>
+        </footer>
+
     </div>
 </div>
+
 <script type="module" src="/src/main.js"></script>
 </body>
 </html>

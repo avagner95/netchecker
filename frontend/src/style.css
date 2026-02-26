@@ -925,3 +925,8 @@ body:not(:target) .navtab[href="#settings"],
     opacity: 0.45;
     filter: grayscale(1);
 }
+
+.legend-item.off {
+    opacity: 0.45;
+    /* убери grayscale */
+}

@@ -223,12 +223,13 @@ function renderLegend() {
 
     root.innerHTML = names.map((name, idx) => {
         const on = enabled.get(name) !== false;
+        const c = colorForName(name);
         return `
-      <div class="legend-item ${on ? "" : "off"}" data-name="${escapeHtml(name)}">
-        <span class="legend-dot" style="opacity:.8"></span>
-        ${escapeHtml(name)}
-      </div>
-    `;
+  <div class="legend-item ${on ? "" : "off"}" data-name="${escapeHtml(name)}">
+    <span class="legend-dot" style="background:${c}"></span>
+    ${escapeHtml(name)}
+  </div>
+`;
     }).join("");
 
     // Click handlers (event delegation)
@@ -305,7 +306,7 @@ function drawChart() {
 
         // A simple color scheme using alpha variations (no heavy palette)
         const base = 0.28 + (idx % 6) * 0.08;
-        ctx.strokeStyle = `rgba(24,177,154,${Math.min(0.85, base + 0.25)})`;
+        ctx.strokeStyle = colorForNameAlpha(name, 0.85);
         ctx.lineWidth = 1.5;
 
         let started = false;
@@ -342,6 +343,30 @@ function drawChart() {
     ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial";
     ctx.fillText(`0 ms`, 8, h - 8);
     ctx.fillText(`${maxRtt} ms`, 8, 14);
+}
+
+function hash32(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+}
+
+function colorForName(name) {
+    const h = hash32(name);
+    const hue = h % 360;          // 0..359
+    const sat = 68;               // можно 60–75
+    const light = 58;             // для тёмного фона хорошо
+    return `hsl(${hue} ${sat}% ${light}%)`;
+}
+
+function colorForNameAlpha(name, a) {
+    const h = hash32(name) % 360;
+    const sat = 68;
+    const light = 58;
+    return `hsla(${h}, ${sat}%, ${light}%, ${a})`;
 }
 list?.addEventListener('blur', (e) => {
     const cell = e.target;

@@ -4,6 +4,7 @@ package monitor
 
 import (
 	"context"
+	"encoding/binary"
 	"net"
 	"time"
 	"unsafe"
@@ -193,13 +194,6 @@ func resolveIPv4(address string) (net.IP, error) {
 
 func ipToUint32(ip4 net.IP) uint32 {
 	// ip4 must be 4 bytes
-	b := []byte(ip4.To4())
-	return uint32(b[0])<<24 | uint32(b[1])<<16 | uint32(b[2])<<8 | uint32(b[3])
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
+	b := ip4.To4()
+	return binary.LittleEndian.Uint32(b)
 }

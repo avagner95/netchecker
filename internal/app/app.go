@@ -3,13 +3,14 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/wailsapp/wails/v3/pkg/application"
+	"log"
 	"netchecker/internal/config"
 	"netchecker/internal/monitor"
 	"netchecker/internal/storage"
 	"os"
 	"path/filepath"
-
-	"github.com/wailsapp/wails/v3/pkg/application"
+	"time"
 )
 
 func NewApp(AppName string) (*App, error) {
@@ -113,4 +114,46 @@ func (a *App) SaveConfig(newCfg config.Config) bool {
 		a.mon.UpdateConfig(newCfg)
 	}
 	return true
+}
+
+// как у тебя уже есть
+func (a *App) OnStartup(ctx context.Context) {
+	log.Println("Startup called")
+	a.ctx = ctx
+	a.wails = application.Get() // <-- ВАЖНО: без аргументов в alpha.72
+}
+
+func (a *App) ExportAllToCSVGZWithDialog() (string, error) {
+	a.mu.RLock()
+	st := a.store
+	app := a.wails
+	a.mu.RUnlock()
+
+	if st == nil {
+		return "", fmt.Errorf("store is nil")
+	}
+
+	// если вдруг nil — попробуем получить ещё раз
+	if app == nil {
+		app = application.Get()
+		if app == nil {
+			return "", fmt.Errorf("wails app is nil (startup not completed)")
+		}
+		a.mu.Lock()
+		a.wails = app
+		a.mu.Unlock()
+	}
+
+	path, err := app.Dialog.SaveFile().
+		SetFilename(fmt.Sprintf("netchecker_%s.csv.gz", time.Now().Format("20060102_150405"))).
+		AddFilter("GZip CSV", "*.csv.gz").
+		PromptForSingleSelection()
+	if err != nil {
+		return "", err
+	}
+	if path == "" {
+		return "", nil
+	}
+
+	return st.ExportMergedCSVGZ(context.Background(), path, 0, 0)
 }

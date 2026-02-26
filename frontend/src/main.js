@@ -369,6 +369,33 @@ function setValue(id, v) {
     const el = document.getElementById(id);
     if (el) el.value = String(v ?? '');
 }
+function initExportCSV() {
+    const btn = document.getElementById("btnExportCsv");
+    const statusEl = document.getElementById("exportCsvStatus");
+    if (!btn) return;
+
+    btn.addEventListener("click", async () => {
+        try {
+            btn.disabled = true;
+            if (statusEl) statusEl.textContent = "Exporting...";
+
+            // Вызов Go-метода (Wails bindings)
+            const savedPath = await App.ExportAllToCSVGZWithDialog();
+
+            if (!savedPath) {
+                if (statusEl) statusEl.textContent = "Cancelled";
+                return;
+            }
+
+            if (statusEl) statusEl.textContent = `Saved: ${savedPath}`;
+        } catch (e) {
+            console.error(e);
+            if (statusEl) statusEl.textContent = `Export failed: ${e?.message || e}`;
+        } finally {
+            btn.disabled = false;
+        }
+    });
+}
 
 window.addEventListener("DOMContentLoaded", async (event) => {
     running = await App.IsRunning();
@@ -427,5 +454,7 @@ window.addEventListener("DOMContentLoaded", async (event) => {
     bindNum('rtt_lastn', (n) => cfg.trace.highRtt.lastN = n);
     setActiveStatus(running);
     renderTargetsRows()
+    initExportCSV();
+
 });
 

@@ -24,8 +24,16 @@
 
             </div>
             <div class="topbar-right">
-                <button id="btnSave" class="btn secondary">Save</button>
+                <button id="btnSave" class="btn secondary">Save Configuration</button>
+
                 <button id="btnStartStop" class="btn primary">Start</button>
+                <div class="settings-block">
+                    <button id="btnExportCsv" class="btn">
+                        Export CSV (.gz)
+                    </button>
+
+
+                </div>
             </div>
 
         </div>
@@ -189,7 +197,7 @@
             <span id="db_size"></span>
 
             <span class="spacer"></span>
-
+            <span id="exportCsvStatus" class="muted"></span>
             <span id="sb_ver" class="muted">v0.0.0-dev</span>
         </div>
     </div>

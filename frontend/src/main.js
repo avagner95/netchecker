@@ -7,6 +7,342 @@ let toastTimer = null;
 let dirty = false;
 const list = document.getElementById('targetsList');
 
+// ===== Dashboard state =====
+let dashTimer = null;
+let lastBucketMs = 0;
+const WINDOW_MS = 30 * 60 * 1000;
+const POLL_MS = 10 * 1000;
+
+// In-memory series: Map<name, Array<{t, rtt, errRate}>>
+const seriesByName = new Map();
+const enabled = new Map(); // name -> boolean
+
+// ===== Helpers =====
+function fmtMs(x) {
+    if (!isFinite(x)) return "—";
+    return `${Math.round(x)} ms`;
+}
+
+function fmtPct(x) {
+    if (!isFinite(x)) return "—";
+    return `${x.toFixed(1)}%`;
+}
+
+function timeHHMMSS(ms) {
+    const d = new Date(ms);
+    return d.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", second: "2-digit"});
+}
+
+function stateClass(summaryRow) {
+    // Simple, cheap rules for UX:
+    // - DOWN => bad
+    // - loss >= 2% => warn, >= 5% => bad
+    // - else ok
+    if (!summaryRow.last_ok) return "state-bad";
+    if (summaryRow.loss_pct >= 5) return "state-bad";
+    if (summaryRow.loss_pct >= 2) return "state-warn";
+    return "state-ok";
+}
+
+// ===== DOM refs =====
+const dashCardsEl = () => document.getElementById("dash_cards");
+const dashLegendEl = () => document.getElementById("dash_legend");
+const dashLastUpdateEl = () => document.getElementById("dash_last_update");
+const dashCanvas = () => document.getElementById("dash_chart");
+const btnDashRefresh = () => document.getElementById("btnDashRefresh");
+
+// ===== Init Dashboard =====
+export function initDashboard() {
+    // Button
+    const btn = btnDashRefresh();
+    if (btn) btn.addEventListener("click", () => dashPoll(true));
+
+    // Resize chart
+    window.addEventListener("resize", () => drawChart());
+
+    // Initial load + start interval
+    dashPoll(true);
+    if (dashTimer) clearInterval(dashTimer);
+    dashTimer = setInterval(() => dashPoll(false), POLL_MS);
+}
+
+// ===== Poll =====
+async function dashPoll(fullReload) {
+    try {
+        if (fullReload) {
+            lastBucketMs = 0;
+            seriesByName.clear();
+            enabled.clear();
+            renderLegend(); // empty
+            drawChart();
+        }
+
+        // Call backend
+        const resp = await App.DashboardPoll(lastBucketMs);
+        if (!resp) return;
+
+        // Update "last update"
+        if (dashLastUpdateEl()) {
+            dashLastUpdateEl().textContent = `updated: ${timeHHMMSS(resp.now_ms)}`;
+        }
+
+        // Render summary cards
+        renderCards(resp.summary);
+
+        // Merge series
+        mergeSeries(resp.series, resp.now_ms);
+
+        // Update lastBucket
+        if (resp.last_bucket_ms && resp.last_bucket_ms > lastBucketMs) {
+            lastBucketMs = resp.last_bucket_ms;
+        }
+
+        // Render legend once we know names
+        renderLegend();
+
+        // Draw chart
+        drawChart();
+    } catch (e) {
+        console.error("DashboardPoll failed:", e);
+    }
+}
+
+// ===== Cards =====
+function renderCards(summary) {
+    const root = dashCardsEl();
+    if (!root) return;
+
+    if (!Array.isArray(summary) || summary.length === 0) {
+        root.innerHTML = `<div class="muted">No data for last 30 minutes</div>`;
+        return;
+    }
+
+    // Ensure enabled defaults
+    for (const r of summary) {
+        if (!enabled.has(r.name)) enabled.set(r.name, true);
+    }
+
+    root.innerHTML = summary.map(r => {
+        const cls = stateClass(r);
+        const statusText = r.last_ok ? "UP" : "DOWN";
+        const lastSeen = r.last_ok_ts_ms ? timeHHMMSS(r.last_ok_ts_ms) : "—";
+
+        return `
+      <div class="card-tile ${cls}">
+        <div class="card-top">
+          <div class="card-name" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</div>
+          <div class="card-status">
+            <span class="badge">${statusText}</span>
+          </div>
+        </div>
+
+        <div class="muted" style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(r.address)}">
+          ${escapeHtml(r.address)}
+        </div>
+
+        <div class="card-kpis">
+          <div class="kpi">
+            <div class="k">Loss</div>
+            <div class="v">${fmtPct(r.loss_pct)}</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Avg RTT</div>
+            <div class="v">${fmtMs(r.avg_rtt_ms)}</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Max RTT</div>
+            <div class="v">${fmtMs(r.max_rtt_ms)}</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Last OK</div>
+            <div class="v">${lastSeen}</div>
+          </div>
+        </div>
+
+        <div class="muted" style="font-size:12px; display:flex; gap:10px; justify-content:space-between;">
+          <span>Samples: <b>${r.total}</b></span>
+          <span>Err: <b>${r.errors}</b></span>
+        </div>
+      </div>
+    `;
+    }).join("");
+}
+
+function escapeHtml(s) {
+    return String(s ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+// ===== Series merge (bucketed 1s points) =====
+function mergeSeries(points, nowMs) {
+    if (!Array.isArray(points) || points.length === 0) return;
+
+    const cutoff = nowMs - WINDOW_MS;
+
+    for (const p of points) {
+        // Ensure series list
+        if (!seriesByName.has(p.name)) seriesByName.set(p.name, []);
+        if (!enabled.has(p.name)) enabled.set(p.name, true);
+
+        const arr = seriesByName.get(p.name);
+        const errRate = p.total > 0 ? (p.errors / p.total) : 0;
+
+        // store avg RTT + err rate for bucket
+        arr.push({t: p.bucket_ms, rtt: p.avg_rtt_ms, err: errRate});
+    }
+
+    // Trim old
+    for (const [name, arr] of seriesByName.entries()) {
+        let i = 0;
+        while (i < arr.length && arr[i].t < cutoff) i++;
+        if (i > 0) arr.splice(0, i);
+
+        // Also de-duplicate buckets if backend ever repeats a bucket
+        // (keep last occurrence)
+        const dedup = new Map();
+        for (const pt of arr) dedup.set(pt.t, pt);
+        const merged = Array.from(dedup.values()).sort((a, b) => a.t - b.t);
+        seriesByName.set(name, merged);
+    }
+}
+
+// ===== Legend (toggle series) =====
+function renderLegend() {
+    const root = dashLegendEl();
+    if (!root) return;
+
+    const names = Array.from(seriesByName.keys()).sort();
+    if (names.length === 0) {
+        root.innerHTML = "";
+        return;
+    }
+
+    root.innerHTML = names.map((name, idx) => {
+        const on = enabled.get(name) !== false;
+        return `
+      <div class="legend-item ${on ? "" : "off"}" data-name="${escapeHtml(name)}">
+        <span class="legend-dot" style="opacity:.8"></span>
+        ${escapeHtml(name)}
+      </div>
+    `;
+    }).join("");
+
+    // Click handlers (event delegation)
+    root.onclick = (e) => {
+        const el = e.target.closest(".legend-item");
+        if (!el) return;
+        const name = el.getAttribute("data-name");
+        enabled.set(name, !(enabled.get(name) !== false));
+        renderLegend();
+        drawChart();
+    };
+}
+
+// ===== Chart drawing (simple canvas) =====
+// Note: no external libs -> minimal overhead.
+function drawChart() {
+    const canvas = dashCanvas();
+    if (!canvas) return;
+
+    const parent = canvas.parentElement;
+    const w = parent.clientWidth;
+    const h = parent.clientHeight;
+    if (w <= 10 || h <= 10) return;
+
+    // HiDPI
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Background
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "rgba(0,0,0,0.12)";
+    ctx.fillRect(0, 0, w, h);
+
+    // Gather enabled series points
+    const now = Date.now();
+    const from = now - WINDOW_MS;
+
+    const enabledNames = Array.from(seriesByName.keys()).filter(n => enabled.get(n) !== false);
+    if (enabledNames.length === 0) return;
+
+    // Determine max RTT (for scale)
+    let maxRtt = 10;
+    for (const name of enabledNames) {
+        const arr = seriesByName.get(name) || [];
+        for (const pt of arr) {
+            if (pt.t >= from && pt.rtt > maxRtt) maxRtt = pt.rtt;
+        }
+    }
+    // Add headroom
+    maxRtt = Math.max(10, Math.round(maxRtt * 1.2));
+
+    // Grid lines (very light)
+    ctx.strokeStyle = "rgba(255,255,255,0.06)";
+    ctx.lineWidth = 1;
+    const gridY = 4;
+    for (let i = 0; i <= gridY; i++) {
+        const y = Math.round((h - 1) * (i / gridY));
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+    }
+
+    // Draw series (each with different lightness — simple)
+    enabledNames.forEach((name, idx) => {
+        const arr = seriesByName.get(name) || [];
+        if (arr.length < 2) return;
+
+        // A simple color scheme using alpha variations (no heavy palette)
+        const base = 0.28 + (idx % 6) * 0.08;
+        ctx.strokeStyle = `rgba(24,177,154,${Math.min(0.85, base + 0.25)})`;
+        ctx.lineWidth = 1.5;
+
+        let started = false;
+        ctx.beginPath();
+
+        for (const pt of arr) {
+            const t = pt.t;
+            if (t < from) continue;
+
+            const x = (t - from) / WINDOW_MS * w;
+            const y = h - (pt.rtt / maxRtt) * h;
+
+            // Break line when errors dominate this bucket
+            if (pt.err >= 0.5) {
+                // draw a small marker for loss bucket
+                ctx.fillStyle = "rgba(255,95,86,0.55)";
+                ctx.fillRect(x - 1, y - 1, 3, 3);
+                started = false;
+                continue;
+            }
+
+            if (!started) {
+                ctx.moveTo(x, y);
+                started = true;
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        ctx.stroke();
+    });
+
+    // Axis labels (minimal)
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial";
+    ctx.fillText(`0 ms`, 8, h - 8);
+    ctx.fillText(`${maxRtt} ms`, 8, 14);
+}
 list?.addEventListener('blur', (e) => {
     const cell = e.target;
     if (!cell?.dataset?.field) return;
@@ -235,14 +571,6 @@ function toggleHTML({checked, disabled, id}) {
     </label>
   `;
 }
-function escapeHtml(s) {
-    return String(s ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", "&#39;");
-}
 
 
 function renderTargetsRows() {
@@ -455,6 +783,7 @@ window.addEventListener("DOMContentLoaded", async (event) => {
     setActiveStatus(running);
     renderTargetsRows()
     initExportCSV();
+    initDashboard();
 
 });
 

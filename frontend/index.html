@@ -44,7 +44,37 @@
         <!-- CONTENT -->
         <main class="content">
             <section class="tabpanel" id="dashboard">
-                <!-- dashboard content -->
+                <div class="dash-grid">
+
+                    <!-- Top: Summary cards -->
+                    <section class="panel glass dash-panel">
+                        <div class="panel-head">
+                            <div class="panel-title">Overview (last 30m)</div>
+                            <div class="dash-actions">
+                                <span class="muted" id="dash_last_update">—</span>
+                                <button class="btn secondary" id="btnDashRefresh">Refresh</button>
+                            </div>
+                        </div>
+
+                        <div class="dash-cards scrollbar" id="dash_cards"></div>
+                    </section>
+
+                    <!-- Bottom: Time series -->
+                    <section class="panel glass dash-panel">
+                        <div class="panel-head">
+                            <div class="panel-title">RTT Time Series</div>
+                            <div class="panel-sub">bucket: 1s • window: 30m</div>
+                        </div>
+
+                        <!-- simple canvas chart (no libs) -->
+                        <div class="chart-wrap">
+                            <canvas class="chart" id="dash_chart"></canvas>
+                        </div>
+
+                        <div class="chart-legend" id="dash_legend"></div>
+                    </section>
+
+                </div>
             </section>
 
             <section class="tabpanel" id="settings">

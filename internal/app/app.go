@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/wailsapp/wails/v3/pkg/application"
 	"log"
 	"netchecker/internal/config"
 	"netchecker/internal/monitor"
@@ -11,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 func NewApp(AppName string) (*App, error) {
@@ -156,4 +157,28 @@ func (a *App) ExportAllToCSVGZWithDialog() (string, error) {
 	}
 
 	return st.ExportMergedCSVGZ(context.Background(), path, 0, 0)
+}
+
+func (a *App) DashboardPoll(lastBucketMs int64) (*storage.DashboardResponse, error) {
+	a.mu.RLock()
+	st := a.store
+	ctx := a.ctx
+	a.mu.RUnlock()
+
+	// 1) store must exist
+	if st == nil {
+		return nil, fmt.Errorf("store is nil (app not initialized)")
+	}
+
+	// 2) ctx might not be set yet if called too early
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// 3) (optional) ensure db is open
+	if !st.IsReady() { // добавим метод ниже
+		return nil, fmt.Errorf("db is not ready (sqlite not initialized)")
+	}
+
+	return st.DashboardPoll(ctx, lastBucketMs)
 }

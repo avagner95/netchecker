@@ -3,7 +3,7 @@ package storage
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 	"os"
 	"path/filepath"
 )
@@ -14,7 +14,7 @@ func OpenSQLite(path string) (*SQLiteStore, error) {
 	}
 
 	dsn := fmt.Sprintf("file:%s?_busy_timeout=5000&_foreign_keys=1", path)
-	db, err := sql.Open("sqlite3", dsn)
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("sql open: %w", err)
 	}

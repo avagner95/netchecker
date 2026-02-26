@@ -12,6 +12,7 @@ let dashTimer = null;
 let lastBucketMs = 0;
 const WINDOW_MS = 30 * 60 * 1000;
 const POLL_MS = 10 * 1000;
+let hoveredName = null;
 
 // In-memory series: Map<name, Array<{t, rtt, errRate}>>
 const seriesByName = new Map();
@@ -241,6 +242,20 @@ function renderLegend() {
         renderLegend();
         drawChart();
     };
+    root.onmouseover = (e) => {
+        const el = e.target.closest(".legend-item");
+        if (!el) return;
+        hoveredName = el.getAttribute("data-name");
+        drawChart();
+    };
+
+    root.onmouseout = (e) => {
+        // когда ушли с легенды полностью — сбрасываем
+        if (!root.contains(e.relatedTarget)) {
+            hoveredName = null;
+            drawChart();
+        }
+    };
 }
 
 // ===== Chart drawing (simple canvas) =====
@@ -302,12 +317,16 @@ function drawChart() {
     // Draw series (each with different lightness — simple)
     enabledNames.forEach((name, idx) => {
         const arr = seriesByName.get(name) || [];
+        const isHovered = hoveredName && name === hoveredName;
+        const dimOthers = hoveredName && name !== hoveredName;
+
+
         if (arr.length < 2) return;
 
         // A simple color scheme using alpha variations (no heavy palette)
         const base = 0.28 + (idx % 6) * 0.08;
-        ctx.strokeStyle = colorForNameAlpha(name, 0.85);
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = colorForNameAlpha(name, isHovered ? 0.95 : (dimOthers ? 0.18 : 0.75));
+        ctx.lineWidth = isHovered ? 2.6 : 1.6;
 
         let started = false;
         ctx.beginPath();
@@ -355,18 +374,17 @@ function hash32(str) {
 }
 
 function colorForName(name) {
-    const h = hash32(name);
-    const hue = h % 360;          // 0..359
-    const sat = 68;               // можно 60–75
-    const light = 58;             // для тёмного фона хорошо
+    const hue = hash32(name) % 360;
+    const sat = 68;
+    const light = 58;
     return `hsl(${hue} ${sat}% ${light}%)`;
 }
 
 function colorForNameAlpha(name, a) {
-    const h = hash32(name) % 360;
+    const hue = hash32(name) % 360;
     const sat = 68;
     const light = 58;
-    return `hsla(${h}, ${sat}%, ${light}%, ${a})`;
+    return `hsla(${hue}, ${sat}%, ${light}%, ${a})`;
 }
 list?.addEventListener('blur', (e) => {
     const cell = e.target;

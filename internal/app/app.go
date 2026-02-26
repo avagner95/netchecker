@@ -84,3 +84,9 @@ func (a *App) Stop() bool {
 	}
 	return true
 }
+
+func (a *App) GetConfig() config.Config {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.cfg
+}

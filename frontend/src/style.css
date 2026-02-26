@@ -1,0 +1,544 @@
+:root {
+    --bg1: #0b1322;
+    --bg2: #0a1528;
+
+    /* Core colors */
+    --text: rgba(255, 255, 255, 0.92);
+    --text-muted: rgba(255, 255, 255, 0.55);
+    --muted: rgba(255, 255, 255, 0.58);
+
+    /* Surfaces & borders */
+    --glass: rgba(255, 255, 255, 0.06);
+    --border: rgba(255, 255, 255, 0.10);
+    --surface-1: rgba(255, 255, 255, 0.03);
+    --surface-2: rgba(255, 255, 255, 0.04);
+    --surface-head: rgba(255, 255, 255, 0.02);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-soft: rgba(255, 255, 255, 0.08);
+
+    /* Accents */
+    --spruce: #18b19a;
+    --spruce2: #0ea28c;
+    --warn: #ffbd2e;
+    --down: #ff5f56;
+
+    /* Layout */
+    --gap: 14px;
+    --radius-lg: 14px;
+    --radius-md: 12px;
+    --radius-sm: 10px;
+
+    /* Controls */
+    --btn-h: 34px;
+    --btn-h-sm: 28px;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+    margin: 0;
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background:
+            radial-gradient(1200px 600px at 60% -10%, rgba(24, 177, 154, 0.18), transparent 60%),
+            radial-gradient(1000px 600px at 30% -20%, rgba(120, 170, 255, 0.18), transparent 60%),
+            linear-gradient(180deg, var(--bg1), var(--bg2));
+    overflow: hidden;
+}
+
+/* ===== Background (stars + noise) ===== */
+.bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+}
+.bg-glow {
+    position: absolute;
+    inset: -20%;
+    background:
+            radial-gradient(700px 420px at 70% 15%, rgba(24, 177, 154, 0.20), transparent 65%),
+            radial-gradient(900px 520px at 40% 5%, rgba(100, 160, 255, 0.18), transparent 70%);
+    filter: blur(2px);
+    opacity: 0.9;
+}
+.bg-noise {
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+    opacity: 0.10;
+    mix-blend-mode: overlay;
+}
+.bg-stars {
+    position: absolute;
+    inset: 0;
+    background-image:
+            radial-gradient(1px 1px at 10% 20%, rgba(255, 255, 255, 0.45), transparent 60%),
+            radial-gradient(1px 1px at 30% 80%, rgba(255, 255, 255, 0.35), transparent 60%),
+            radial-gradient(1px 1px at 55% 30%, rgba(255, 255, 255, 0.30), transparent 60%),
+            radial-gradient(1px 1px at 80% 60%, rgba(255, 255, 255, 0.35), transparent 60%),
+            radial-gradient(1px 1px at 75% 15%, rgba(255, 255, 255, 0.25), transparent 60%);
+    opacity: 0.35;
+}
+
+/* ===== Window layout ===== */
+.window {
+    position: relative;
+    z-index: 1;
+
+    /* ВАЖНО: topbar и statusbar всегда на месте */
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+
+    padding: 16px;
+    gap: var(--gap);
+
+    min-height: 0; /* чтобы центр нормально скроллился внутри */
+}
+
+/* ===== Glass ===== */
+.glass {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 16px 45px rgba(0, 0, 0, 0.35);
+    margin-top: 10px;
+    padding-top: 10px;
+    padding-left: 10px;
+}
+
+/* ===== Topbar ===== */
+.topbar {
+    flex: 0 0 auto; /* закреплён сверху */
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 0 14px;
+}
+.topbar-center {
+    font-weight: 650;
+    letter-spacing: 0.4px;
+    opacity: 0.92;
+}
+.topbar-right {
+    position: absolute;
+    right: 14px;
+    display: flex;
+    gap: 10px;
+}
+
+/* ===== Topbar Tabs ===== */
+.navtabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 14px;
+}
+.navtab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+
+    border: 1px solid var(--border-soft);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.72);
+
+    cursor: pointer;
+    font-weight: 750;
+    letter-spacing: 0.2px;
+    height: var(--btn-h);
+    padding: 0 12px;
+    border-radius: var(--radius-sm);
+    transition: 160ms ease;
+}
+.navtab:hover {
+    background: rgba(24, 177, 154, 0.10);
+    border-color: rgba(24, 177, 154, 0.18);
+    color: rgba(255, 255, 255, 0.90);
+}
+
+/* ===== Активный таб (стабильно, без :has) ===== */
+body:not(:target) .navtab[href="#settings"],
+#settings:target ~ * .navtab[href="#settings"],
+#dashboard:target ~ * .navtab[href="#dashboard"] {
+    background: rgba(24, 177, 154, 0.18);
+    border-color: rgba(24, 177, 154, 0.30);
+    color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+}
+
+/* ===== Center content (between topbar and statusbar) ===== */
+.content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden; /* важно — чтобы не было наложений/скролла на body */
+    display: block;
+}
+
+/* ===== Tab panels (СТАБИЛЬНО БЕЗ ПРОПАДАНИЙ) ===== */
+.tabpanel {
+    display: none;
+    height: 100%;
+    min-height: 0;
+}
+
+/* default: settings */
+#settings { display: block; }
+
+/* explicit */
+#settings:target { display: block; }
+#dashboard:target { display: block; }
+
+/* если открыт dashboard — скрываем settings (важно: dashboard идёт ПЕРВЫМ в HTML) */
+#dashboard:target ~ #settings { display: none; }
+
+.tabpanel[hidden] {
+    display: none !important;
+}
+
+/* ===== Split inside SETTINGS tab =====
+   Settings (left) fixed, Targets (right) fills remaining space */
+.settings-split{
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: var(--gap);
+    align-items: stretch;
+}
+
+/* Left settings panel scrolls if needed */
+.settings-left{
+    min-height: 0;
+    overflow: auto;
+}
+
+/* Right targets fills remaining space and has internal scroll */
+.targets-right{
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Make targets area scroll inside */
+.targets-wrap{
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.targets{
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding-right: 2px;
+}
+
+/* Responsive: stack */
+@media (max-width: 1000px){
+    .settings-split{
+        grid-template-columns: 1fr;
+    }
+    .targets-right{ overflow: visible; }
+}
+
+/* ===== Panels / titles ===== */
+.panel { padding: 14px; }
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 650;
+    margin-bottom: 12px;
+    opacity: 0.92;
+}
+.panel-right {
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+/* ===== Buttons ===== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: var(--btn-h);
+    padding: 0 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.90);
+    cursor: pointer;
+    font-weight: 700;
+}
+.btn.primary {
+    border-color: rgba(24, 177, 154, 0.30);
+    background: linear-gradient(180deg, rgba(24, 177, 154, 0.95), rgba(14, 162, 140, 0.95));
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
+}
+.btn.secondary { background: rgba(255, 255, 255, 0.07); }
+.btn.ghost {
+    background: transparent;
+    border-color: var(--border);
+    color: rgba(255, 255, 255, 0.72);
+}
+.btn.small {
+    height: var(--btn-h-sm);
+    padding: 0 10px;
+    border-radius: 9px;
+    font-size: 12px;
+}
+.full { width: 100%; }
+
+/* ===== Icon button ===== */
+.icon-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.icon-btn.danger:hover {
+    border-color: rgba(255, 95, 86, 0.25);
+    background: rgba(255, 95, 86, 0.14);
+}
+
+/* ===== Toggle switch ===== */
+.toggle {
+    position: relative;
+    width: 42px;
+    height: 24px;
+    display: inline-block;
+}
+.toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.slider {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    transition: 180ms ease;
+}
+.slider:before {
+    content: "";
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    top: 2px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 50%;
+    transition: 180ms ease;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+.toggle input:checked + .slider {
+    background: rgba(24, 177, 154, 0.22);
+    border-color: rgba(24, 177, 154, 0.30);
+}
+.toggle input:checked + .slider:before {
+    transform: translateX(18px);
+    background: rgba(255, 255, 255, 0.95);
+}
+.toggle.small { width: 38px; height: 22px; }
+.toggle.small .slider:before { height: 16px; width: 16px; top: 2px; }
+.toggle.small input:checked + .slider:before { transform: translateX(16px); }
+.toggle input:disabled + .slider { opacity: 0.5; }
+
+/* ===== Settings layout ===== */
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+}
+.block-title {
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0.8;
+    margin-bottom: 6px;
+}
+.form-row {
+    display: grid;
+    grid-template-columns: 160px 120px 40px;
+    align-items: center;
+    gap: 12px;
+    padding: 5px 0;
+}
+.form-row.disabled { opacity: 0.75; }
+
+.input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #fff;
+    width: 100px;
+}
+.input.inline {
+    width: 70px;
+    text-align: right;
+    padding: 4px 8px;
+    font-size: 12px;
+    border-color: rgba(255, 255, 255, 0.12);
+    transition: 0.2s ease;
+}
+.input.inline.small { width: 55px; }
+.input.inline:focus {
+    outline: none;
+    border-color: rgba(100, 180, 255, 0.60);
+    box-shadow: 0 0 0 2px rgba(100, 180, 255, 0.15);
+}
+.input:disabled,
+.input.inline:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.unit {
+    text-align: left;
+    opacity: 0.6;
+    font-size: 12px;
+}
+
+/* ===== Targets table ===== */
+.sidebar {
+    width: 100%;
+    min-width: 0;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+}
+.sidebar h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 650;
+    opacity: 0.92;
+}
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.trow {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 48px 1fr 64px 64px 84px 64px 48px;
+    gap: 8px;
+    align-items: center;
+    padding: 10px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.035);
+    transition: 160ms ease;
+}
+.trow:hover {
+    background: rgba(24, 177, 154, 0.08);
+    border-color: rgba(24, 177, 154, 0.16);
+}
+.thead {
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--surface-head);
+}
+.cell {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.editable {
+    outline: none;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+}
+.editable:focus {
+    background: rgba(0, 0, 0, 0.20);
+    border: 1px solid rgba(24, 177, 154, 0.22);
+}
+.right { text-align: right; }
+.center { display: flex; justify-content: center; }
+
+/* Targets row with Name + Address */
+.trow-flex {
+    display: grid;
+    grid-template-columns: 60px 70px 220px 1fr 50px;
+    align-items: center;
+    gap: 8px;
+}
+.trow.thead.trow-flex {
+    font-size: 12px;
+    opacity: 0.6;
+}
+.trow-flex .cell.editable {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.trow-flex > div:last-child {
+    display: flex;
+    justify-content: flex-end;
+}
+.trow-compact { min-height: 36px; }
+
+/* ===== Status bar ===== */
+.statusbar {
+    flex: 0 0 auto; /* закреплён снизу */
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.75);
+}
+.sep { color: rgba(255, 255, 255, 0.35); }
+.spacer { margin-left: auto; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.status-dot.ok { background: var(--spruce); }
+.status-dot.muted { background: rgba(255, 255, 255, 0.35); }
+
+/* ===== Dirty / errors ===== */
+.dirty-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--warn);
+    box-shadow: 0 0 0 3px rgba(255, 189, 46, 0.12);
+    margin-left: 10px;
+}
+.row-error {
+    border-color: rgba(255, 95, 86, 0.28) !important;
+    background: rgba(255, 95, 86, 0.10) !important;
+}
+
+/* Optional: keep manual active class if JS sets it */
+.navtab.active {
+    background: rgba(24, 177, 154, 0.18);
+    border-color: rgba(24, 177, 154, 0.30);
+    color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+}

@@ -38,25 +38,32 @@ list.addEventListener('change', (e) => {
 
     const input = e.target;
     if (input.tagName !== 'INPUT') return;
+    if (input.id === 'gw_on'){
+        cfg.gateway = cfg.gateway || {};
+        cfg.gateway.enabled = !!e.target.checked;
+        setDirty(true);
+    }
+    else{
+        const row = input.closest('[data-kind="target"]');
+        if (!row) return;
 
-    const row = input.closest('[data-kind="target"]');
-    if (!row) return;
+        const idx = Number(row.dataset.idx);
+        console.log(idx)
+        console.log(cfg.targets[idx])
 
-    const idx = Number(row.dataset.idx);
-    console.log(idx)
-    console.log(cfg.targets[idx])
+        if (!Number.isFinite(idx)) return;
 
-    if (!Number.isFinite(idx)) return;
+        if (input.id.startsWith('t_on_')) {
+            cfg.targets[idx].enabled = input.checked;
+        }
 
-    if (input.id.startsWith('t_on_')) {
-        cfg.targets[idx].enabled = input.checked;
+        if (input.id.startsWith('t_trace_')) {
+            cfg.targets[idx].traceEnabled = input.checked;
+        }
+
+        setDirty(true);
     }
 
-    if (input.id.startsWith('t_trace_')) {
-        cfg.targets[idx].traceEnabled = input.checked;
-    }
-
-    setDirty(true);
 });
 
 function setActiveStatus(status) {

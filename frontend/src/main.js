@@ -4,6 +4,7 @@ import {App} from "../bindings/netchecker/internal/app";
 let running = false;
 let cfg = null;
 let toastTimer = null;
+let dirty = false;
 
 function setActiveStatus(status) {
     let btnText = status ? "Stop" : "Start";
@@ -16,12 +17,34 @@ function setActiveStatus(status) {
 }
 
 document.getElementById('btnStartStop').addEventListener('click', async () => {
-    console.log("Starting app");
+
     if (!running)
         await App.Start();
     else
         await App.Stop()
 })
+document.getElementById('btnSave')?.addEventListener('click', async () => {
+    if (!App) return;
+
+    const errs = validateConfigForSave();
+    if (errs.length) {
+        toast(`Fix settings: ${errs[0]}`);
+        console.log(errs.join('\n'))
+        return;
+    }
+    console.log('Saving...');
+    const ok = await App.SaveConfig(cfg);
+    if (ok) {
+        console.log('Saved');
+        setDirty(false);
+        toast('Saved');
+        cfg = await App.GetConfig();
+
+    } else {
+        console.log('Save failed');
+        toast('Save failed');
+    }
+});
 function toast(msg) {
     clearTimeout(toastTimer);
     let el = document.getElementById('toast');
@@ -37,7 +60,102 @@ function toast(msg) {
         el.style.display = 'none';
     }, 2200);
 }
+function setDirty(v) {
+    dirty = !!v;
+    console.log(dirty)
 
+    const dot = document.getElementById('dirtyDot');
+    if (dot) dot.style.display = dirty ? 'inline-block' : 'none';
+}
+
+
+function validateConfigForSave() {
+    document.querySelectorAll('[data-kind="target"].row-error').forEach(el => el.classList.remove('row-error'));
+
+    const errors = [];
+    const targets = cfg?.targets || [];
+
+    targets.forEach((t, idx) => {
+        if (!t?.enabled) return;
+        
+        const res = validateAddress(t.address);
+        if (!res.ok) {
+            let msg = `Target #${idx + 1}: invalid address`;
+            if (res.reason === 'empty') msg = `Target #${idx + 1}: address is empty`;
+            if (res.reason === 'protocol') msg = `Target #${idx + 1}: remove "http://..."`;
+            if (res.reason === 'bad_chars') msg = `Target #${idx + 1}: no spaces or "/" allowed`;
+            if (res.reason === 'too_long') msg = `Target #${idx + 1}: address too long`;
+
+            errors.push(msg);
+
+            const row = document.querySelector(`[data-kind="target"][data-idx="${idx}"]`);
+            row?.classList.add('row-error');
+        }
+    });
+
+    const p = cfg.ping || {};
+    if (p.intervalMs < 250) errors.push('Ping: interval must be >= 250ms');
+    if (p.timeoutMs < 200 || p.timeoutMs > 10000) errors.push('Ping: timeout must be 200..10000ms');
+    if (p.payload < 0 || p.payload > 1472) errors.push('Ping: payload must be 0..1472 bytes');
+
+    const tr = cfg.trace || {};
+    if (tr.cooldownSec < 0 || tr.cooldownSec > 3600) errors.push('Trace: cooldown must be 0..3600 sec');
+
+    const loss = tr.loss || {};
+    if (loss.enabled) {
+        if (loss.percent < 1 || loss.percent > 100) errors.push('Trace Loss: percent must be 1..100');
+        if (loss.lastN < 1 || loss.lastN > 200) errors.push('Trace Loss: lastN must be 1..200');
+    }
+
+    const high = tr.highRtt || tr.highRTT || {};
+    if (high.enabled) {
+        if (high.rttMs < 1 || high.rttMs > 60000) errors.push('Trace High RTT: rttMs must be 1..60000');
+        if (high.percent < 1 || high.percent > 100) errors.push('Trace High RTT: percent must be 1..100');
+        if (high.lastN < 1 || high.lastN > 200) errors.push('Trace High RTT: lastN must be 1..200');
+    }
+    return errors;
+}
+
+function validateAddress(addrRaw) {
+    const addr = (addrRaw || '').trim();
+    if (!addr) return { ok: false, reason: 'empty' };
+    if (addr.length > 253) return { ok: false, reason: 'too_long' };
+    if (/[\/\s]/.test(addr)) return { ok: false, reason: 'bad_chars' };
+    if (addr.includes('://')) return { ok: false, reason: 'protocol' };
+
+    if (isValidIPv4(addr)) return { ok: true };
+    if (isValidHostname(addr)) return { ok: true };
+
+    return { ok: false, reason: 'format' };
+}
+function isValidIPv4(s) {
+    const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(s);
+    if (!m) return false;
+    for (let i = 1; i <= 4; i++) {
+        const n = Number(m[i]);
+        if (!Number.isInteger(n) || n < 0 || n > 255) return false;
+    }
+    return true;
+}
+
+// relaxed hostname validation (labels 1..63, total <=253, no leading/trailing dash)
+function isValidHostname(s) {
+    if (s.length < 1 || s.length > 253) return false;
+    if (s.includes('..')) return false;
+    if (/[\/\s]/.test(s)) return false;
+    if (s.includes('://')) return false;
+
+    if (s.endsWith('.')) s = s.slice(0, -1);
+    if (!s) return false;
+
+    const labels = s.split('.');
+    for (const label of labels) {
+        if (!label.length || label.length > 63) return false;
+        if (label.startsWith('-') || label.endsWith('-')) return false;
+        if (!/^[a-zA-Z0-9_-]+$/.test(label)) return false;
+    }
+    return true;
+}
 
 function toggleHTML({checked, disabled, id}) {
     return `
@@ -60,8 +178,7 @@ function escapeHtml(s) {
 function renderTargetsRows() {
     const targets = cfg?.targets || [];
     const parts = [];
-    console.log("mytargerts")
-    console.log(targets)
+
 
 
     parts.push(`
@@ -83,7 +200,6 @@ function renderTargetsRows() {
     targets.forEach((t, idx) => {
         const nameText = (t.name ?? '').trim();
         const addrText = (t.address ?? '').trim();
-        console.log(parts)
         parts.push(`
       <div class="trow trow-compact trow-flex" data-kind="target" data-idx="${idx}">
         <div class="center">
@@ -109,15 +225,13 @@ function renderTargetsRows() {
       </div>
     `);
     });
-    console.log("mytargerts3")
-    console.log(parts.join(''))
     document.getElementById("targetsList").innerHTML = parts.join('');
 }
 
 
 document.getElementById('addTarget').addEventListener('click', async () => {
     cfg.targets = cfg.targets || [];
-    console.log(cfg.targets)
+
     if (cfg.targets.length >= 20) {
         toast('Max 20 targets');
         return;
@@ -136,7 +250,7 @@ document.getElementById('targetsList').addEventListener('click', (e) => {
 
 
 Events.On("app:size", (ev) => {
-    console.log("Size:", ev.data);
+
     document.getElementById("db_size").innerText = "Size: "  + ev.data;
 
 });

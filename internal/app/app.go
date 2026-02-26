@@ -90,3 +90,27 @@ func (a *App) GetConfig() config.Config {
 	defer a.mu.RUnlock()
 	return a.cfg
 }
+func (a *App) SaveConfig(newCfg config.Config) bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	// минимальная валидация
+	if newCfg.Ping.IntervalMs <= 0 {
+		newCfg.Ping.IntervalMs = a.cfg.Ping.IntervalMs
+	}
+	if newCfg.Ping.TimeoutMs <= 0 {
+		newCfg.Ping.TimeoutMs = a.cfg.Ping.TimeoutMs
+	}
+	if newCfg.Ping.Payload < 0 {
+		newCfg.Ping.Payload = a.cfg.Ping.Payload
+	}
+
+	if err := config.Save(a.cfgPath, newCfg); err != nil {
+		return false
+	}
+	a.cfg = newCfg
+	if a.mon != nil {
+		a.mon.UpdateConfig(newCfg)
+	}
+	return true
+}

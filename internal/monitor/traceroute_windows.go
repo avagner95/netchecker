@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"netchecker/internal/logging"
-	"os/exec"
 	"strings"
 	"time"
 )
@@ -31,7 +30,7 @@ func TraceOnce(ctx context.Context, address string) TraceOut {
 
 	// Run via cmd with chcp 437, and /u for UTF-16LE output
 	cmdLine := "chcp 437>nul & " + strings.Join(args, " ")
-	cmd := exec.CommandContext(tctx, "cmd.exe", "/u", "/c", cmdLine)
+	cmd := execCommandContext(tctx, "cmd.exe", "/u", "/c", cmdLine)
 
 	// Bound output to avoid memory issues
 	const maxOut = 256 * 1024

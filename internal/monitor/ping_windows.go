@@ -5,7 +5,6 @@ package monitor
 import (
 	"bytes"
 	"context"
-	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -47,7 +46,7 @@ func PingOnce(ctx context.Context, address string, timeoutMs int, payload int) P
 	cctx, cancel := context.WithTimeout(ctx, time.Duration(timeoutMs+500)*time.Millisecond)
 	defer cancel()
 
-	cmd := exec.CommandContext(cctx, "cmd.exe", "/u", "/c", cmdLine)
+	cmd := execCommandContext(cctx, "cmd.exe", "/u", "/c", cmdLine)
 
 	var out bytes.Buffer
 	cmd.Stdout = &out

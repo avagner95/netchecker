@@ -77,7 +77,7 @@ func main() {
 		},
 	})
 
-	// Close button (X) => hide to tray
+	// X (close) => hide to tray (not quit)
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		mainWindow.Hide()
 		e.Cancel()
@@ -94,16 +94,25 @@ func main() {
 	menu := app.NewMenu()
 
 	// Robust toggle:
-	// - If window is hidden OR minimized => Show + Restore + Focus
-	// - Else => Hide to tray
+	// - Minimized => Restore+Focus
+	// - Visible (normal) => Hide
+	// - Hidden => Show+Focus
 	menu.Add("Open / Close").OnClick(func(ctx *application.Context) {
-		if !mainWindow.IsVisible() || mainWindow.IsMinimised() {
-			mainWindow.Show()
+
+		// IMPORTANT: minimized windows are still "visible" on Windows
+		if mainWindow.IsMinimised() {
 			mainWindow.Restore()
 			mainWindow.Focus()
 			return
 		}
-		mainWindow.Hide()
+
+		if mainWindow.IsVisible() {
+			mainWindow.Hide()
+			return
+		}
+
+		mainWindow.Show()
+		mainWindow.Focus()
 	})
 
 	menu.AddSeparator()

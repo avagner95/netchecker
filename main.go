@@ -37,7 +37,7 @@ func main() {
 		MaxSizeMB:  10,
 		MaxBackups: 10,
 		Compress:   true,
-		AlsoStdout: true, // dev
+		AlsoStdout: true,
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -45,7 +45,7 @@ func main() {
 
 	app := application.New(application.Options{
 		Name:        AppName,
-		Description: "A demo of using raw HTML & CSS",
+		Description: "NetChecker",
 		Services: []application.Service{
 			application.NewService(&GreetService{}),
 			application.NewService(NCApp),
@@ -77,13 +77,13 @@ func main() {
 		},
 	})
 
-	// Close -> hide to tray
+	// Close button (X) => hide to tray
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		mainWindow.Hide()
 		e.Cancel()
 	})
 
-	// --- System tray ---
+	// --- Tray ---
 	tray := app.SystemTray.New()
 	if runtime.GOOS == "darwin" {
 		tray.SetTemplateIcon(icons.WailsLogoWhiteTransparent)
@@ -93,20 +93,17 @@ func main() {
 
 	menu := app.NewMenu()
 
-	// Toggle window with robust focus/restore.
+	// Robust toggle:
+	// - If window is hidden OR minimized => Show + Restore + Focus
+	// - Else => Hide to tray
 	menu.Add("Open / Close").OnClick(func(ctx *application.Context) {
-		if mainWindow.IsVisible() {
-			mainWindow.Hide()
-			return
-		}
-
-		mainWindow.Show()
-
-		// Windows sometimes needs a tiny delay to properly restore + focus
-		time.AfterFunc(20*time.Millisecond, func() {
+		if !mainWindow.IsVisible() || mainWindow.IsMinimised() {
+			mainWindow.Show()
 			mainWindow.Restore()
 			mainWindow.Focus()
-		})
+			return
+		}
+		mainWindow.Hide()
 	})
 
 	menu.AddSeparator()
@@ -116,8 +113,6 @@ func main() {
 	})
 
 	tray.SetMenu(menu)
-
-	// Attach window to tray (single window only)
 	tray.AttachWindow(mainWindow)
 
 	// --- Events ---

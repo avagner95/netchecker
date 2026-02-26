@@ -344,11 +344,87 @@ document.getElementById('rtt_enabled')?.addEventListener('change', (e) => {
     setFieldsEnabled('rtt_fields', en);
     setDirty(true);
 });
+
+const num = (v) => {
+    const n = parseInt(String(v ?? ''), 10);
+    return Number.isFinite(n) ? n : 0;
+};
+const bindNum = (id, setter) => {
+    const el = document.getElementById(id);
+
+    el?.addEventListener('input', () => {
+        setter(num(el.value));
+        setDirty(true);
+    });
+};
+
+const bindBool = (id, setter) => {
+    const el = document.getElementById(id);
+    el?.addEventListener('change', () => {
+        setter(!!el.checked);
+        setDirty(true);
+    });
+};
+function setValue(id, v) {
+    const el = document.getElementById(id);
+    if (el) el.value = String(v ?? '');
+}
+
 window.addEventListener("DOMContentLoaded", async (event) => {
     running = await App.IsRunning();
     cfg = await  App.GetConfig()
     setFieldsEnabled('loss_fields', !!cfg.trace.loss.enabled);
     setFieldsEnabled('rtt_fields', !!cfg.trace.highRtt.enabled);
+
+
+
+
+    setValue('ping_interval', cfg?.ping?.intervalMs);
+    setValue('ping_timeout',  cfg?.ping?.timeoutMs);
+    setValue('ping_payload',  cfg?.ping?.payload);
+
+    // trace
+    const traceOnStart = document.getElementById('trace_onstart');
+    if (traceOnStart) traceOnStart.checked = !!cfg?.trace?.onStart;
+
+    setValue('trace_cooldown', cfg?.trace?.cooldownSec);
+
+    // loss
+    const lossEnabled = document.getElementById('loss_enabled');
+    if (lossEnabled) lossEnabled.checked = !!cfg?.trace?.loss?.enabled;
+
+    setValue('loss_percent', cfg?.trace?.loss?.percent);
+    setValue('loss_lastn',   cfg?.trace?.loss?.lastN);
+
+    // high rtt
+    const rttEnabled = document.getElementById('rtt_enabled');
+    if (rttEnabled) rttEnabled.checked = !!cfg?.trace?.highRtt?.enabled;
+
+    setValue('rtt_threshold', cfg?.trace?.highRtt?.rttMs);
+    setValue('rtt_percent',   cfg?.trace?.highRtt?.percent);
+    setValue('rtt_lastn',     cfg?.trace?.highRtt?.lastN);
+
+    // теперь можно включать/выключать поля
+    setFieldsEnabled('loss_fields', !!cfg?.trace?.loss?.enabled);
+    setFieldsEnabled('rtt_fields',  !!cfg?.trace?.highRtt?.enabled);
+
+    bindNum('ping_interval', (n) => cfg.ping.intervalMs = n);
+    bindNum('ping_timeout', (n) => cfg.ping.timeoutMs = n);
+    bindNum('ping_payload', (n) => cfg.ping.payload = n);
+
+    // Trace global
+
+    bindBool('trace_onstart', (b) => cfg.trace.onStart = b);
+    bindNum('trace_cooldown', (n) => cfg.trace.cooldownSec = n);
+
+    // Loss trigger
+    bindNum('loss_percent', (n) => cfg.trace.loss.percent = n);
+    bindNum('loss_lastn', (n) => cfg.trace.loss.lastN = n);
+
+    // High RTT trigger
+    bindNum('rtt_threshold', (n) => cfg.trace.highRtt.rttMs = n);
+    bindNum('rtt_percent', (n) => cfg.trace.highRtt.percent = n);
+    bindNum('rtt_lastn', (n) => cfg.trace.highRtt.lastN = n);
     setActiveStatus(running);
     renderTargetsRows()
 });

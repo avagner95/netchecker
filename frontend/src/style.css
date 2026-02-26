@@ -694,3 +694,37 @@ body:not(:target) .navtab[href="#settings"],
         grid-area: actions;
     }
 }
+
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 64px;
+    transform: translateX(-50%);
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: rgba(255, 255, 255, 0.90);
+    font-size: 13px;
+    z-index: 9999;
+}
+
+.icon-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn.danger:hover {
+    border-color: rgba(255, 95, 86, 0.25);
+    background: rgba(255, 95, 86, 0.14);
+}

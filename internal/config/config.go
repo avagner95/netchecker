@@ -11,31 +11,45 @@ import (
 func DefaultConfig() Config {
 	return Config{
 		Ping: PingSettings{
-			IntervalMs: 1000,
+			IntervalMs: 300,
 			TimeoutMs:  1000,
-			Payload:    56,
+			Payload:    64,
 		},
 		Gateway: GatewaySettings{
 			Enabled: true,
 		},
 		Targets: []Target{
-			{Enabled: true, TraceEnabled: true, Name: "Google DNS", Address: "8.8.8.8"},
-			{Enabled: true, TraceEnabled: false, Name: "DNS", Address: "1.1.1.1"},
+			//External
+			{Enabled: true, TraceEnabled: true, Name: "Yandex", Address: "77.88.8.8"},
+			{Enabled: true, TraceEnabled: false, Name: "VK", Address: "87.240.132.72"},
+			{Enabled: true, TraceEnabled: false, Name: "2gis", Address: "91.236.51.50"},
+			{Enabled: true, TraceEnabled: false, Name: "Ozon", Address: "162.159.140.11"},
+			{Enabled: true, TraceEnabled: false, Name: "Rutube", Address: "178.248.233.148"},
+			{Enabled: true, TraceEnabled: false, Name: "Wildberries", Address: "185.138.253.1"},
+			{Enabled: true, TraceEnabled: false, Name: "GosUslugi", Address: "213.59.253.7"},
+			//External Bank
+			{Enabled: true, TraceEnabled: false, Name: "MYPC", Address: "217.12.96.114"},
+			{Enabled: true, TraceEnabled: false, Name: "MYCC", Address: "217.12.96.106"},
+			{Enabled: true, TraceEnabled: false, Name: "Telework", Address: "10.229.208.78"},
+			//Internal
+			{Enabled: true, TraceEnabled: false, Name: "VDI", Address: "10.211.3.182"},
+			{Enabled: true, TraceEnabled: false, Name: "DNS VPN1", Address: "10.224.0.5"},
+			{Enabled: true, TraceEnabled: false, Name: "DNS VPN2", Address: "10.226.0.5"},
 		},
 		Trace: TraceTriggers{
 			OnStart: true,
 			Loss: TraceLossTrigger{
 				Enabled: true,
 				Percent: 10,
-				LastN:   10,
+				LastN:   50,
 			},
 			HighRTT: TraceHighRTTTrigger{
 				Enabled: true,
-				RTTms:   700,
+				RTTms:   300,
 				Percent: 10,
-				LastN:   10,
+				LastN:   50,
 			},
-			CooldownSec: 300,
+			CooldownSec: 600,
 		},
 	}
 }

@@ -92,7 +92,17 @@ type TraceTriggers struct {
 	HighRTT     TraceHighRTTTrigger `json:"highRtt"`
 	CooldownSec int                 `json:"cooldownSec"` // 300 by default
 }
-
+type PingOut struct {
+	OK    bool
+	TTL   *int
+	RTTms *int // integer ms
+	Err   string
+}
+type TraceOut struct {
+	OK   bool
+	Text string
+	Err  string // "timeout" | "canceled" | "exit" | "spawn"
+}
 type PingSettings struct {
 	IntervalMs int `json:"intervalMs"`
 	TimeoutMs  int `json:"timeoutMs"`

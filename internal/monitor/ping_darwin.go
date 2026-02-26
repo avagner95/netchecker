@@ -13,13 +13,6 @@ import (
 	"time"
 )
 
-type PingOut struct {
-	OK    bool
-	TTL   *int
-	RTTms *int // integer ms
-	Err   string
-}
-
 var (
 	reTTL  = regexp.MustCompile(`\bttl=(\d+)\b`)
 	reTime = regexp.MustCompile(`\btime=([0-9.]+)\s*ms\b`)

@@ -5,6 +5,59 @@ let running = false;
 let cfg = null;
 let toastTimer = null;
 let dirty = false;
+const list = document.getElementById('targetsList');
+
+list?.addEventListener('blur', (e) => {
+    const cell = e.target;
+    if (!cell?.dataset?.field) return;
+
+    const row = cell.closest?.('[data-kind="target"]');
+    if (!row) return;
+
+    const idx = Number(row.dataset.idx);
+    if (!Number.isFinite(idx)) return;
+
+    const field = cell.dataset.field;
+    const text = (cell.textContent || '').trim();
+
+    if (field === 'name') {
+        cfg.targets[idx].name = text;
+    } else if (field === 'address') {
+        cfg.targets[idx].address = text;
+
+        const res = validateAddress(text);
+        if (cfg.targets[idx].enabled && !res.ok) row.classList.add('row-error');
+        else row.classList.remove('row-error');
+    } else {
+        return;
+    }
+
+    setDirty(true);
+}, true);
+list.addEventListener('change', (e) => {
+
+    const input = e.target;
+    if (input.tagName !== 'INPUT') return;
+
+    const row = input.closest('[data-kind="target"]');
+    if (!row) return;
+
+    const idx = Number(row.dataset.idx);
+    console.log(idx)
+    console.log(cfg.targets[idx])
+
+    if (!Number.isFinite(idx)) return;
+
+    if (input.id.startsWith('t_on_')) {
+        cfg.targets[idx].enabled = input.checked;
+    }
+
+    if (input.id.startsWith('t_trace_')) {
+        cfg.targets[idx].traceEnabled = input.checked;
+    }
+
+    setDirty(true);
+});
 
 function setActiveStatus(status) {
     let btnText = status ? "Stop" : "Start";
@@ -77,7 +130,7 @@ function validateConfigForSave() {
 
     targets.forEach((t, idx) => {
         if (!t?.enabled) return;
-        
+
         const res = validateAddress(t.address);
         if (!res.ok) {
             let msg = `Target #${idx + 1}: invalid address`;

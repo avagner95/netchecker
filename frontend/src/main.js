@@ -128,7 +128,17 @@ function setDirty(v) {
     if (dot) dot.style.display = dirty ? 'inline-block' : 'none';
 }
 
-
+function setFieldsEnabled(containerId, enabled) {
+    const box = document.getElementById(containerId);
+    if (!box) return;
+    box.querySelectorAll('input, select, textarea, button').forEach(el => {
+        el.disabled = !enabled;
+    });
+    box.querySelectorAll('.form-row').forEach(r => {
+        if (!enabled) r.classList.add('disabled');
+        else r.classList.remove('disabled');
+    });
+}
 function validateConfigForSave() {
     document.querySelectorAll('[data-kind="target"].row-error').forEach(el => el.classList.remove('row-error'));
 
@@ -320,9 +330,25 @@ Events.On("app:running", (ev) => {
     setActiveStatus(running);
 });
 
+
+document.getElementById('loss_enabled')?.addEventListener('change', (e) => {
+    const en = !!e.target.checked;
+    cfg.trace.loss.enabled = en;
+    setFieldsEnabled('loss_fields', en);
+    setDirty(true);
+});
+
+document.getElementById('rtt_enabled')?.addEventListener('change', (e) => {
+    const en = !!e.target.checked;
+    cfg.trace.highRtt.enabled = en;
+    setFieldsEnabled('rtt_fields', en);
+    setDirty(true);
+});
 window.addEventListener("DOMContentLoaded", async (event) => {
     running = await App.IsRunning();
     cfg = await  App.GetConfig()
+    setFieldsEnabled('loss_fields', !!cfg.trace.loss.enabled);
+    setFieldsEnabled('rtt_fields', !!cfg.trace.highRtt.enabled);
     setActiveStatus(running);
     renderTargetsRows()
 });

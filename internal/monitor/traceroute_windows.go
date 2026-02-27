@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"netchecker/internal/logging"
-	"os/exec"
 	"strings"
 	"time"
 )
@@ -34,7 +33,7 @@ func TraceOnce(ctx context.Context, address string) TraceOut {
 	tctx, cancel := context.WithTimeout(ctx, hardTimeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(tctx, "tracert", args...)
+	cmd := execCommandContext(tctx, "tracert", args...)
 
 	// Bound output to avoid memory issues
 	const maxOut = 256 * 1024

@@ -18,7 +18,6 @@ import (
 var assets embed.FS
 
 func init() {
-	application.RegisterEvent[string]("time")
 	application.RegisterEvent[string]("app:size")
 	application.RegisterEvent[bool]("app:running")
 }
@@ -123,15 +122,6 @@ func main() {
 
 	tray.SetMenu(menu)
 	tray.AttachWindow(mainWindow)
-
-	// --- Events ---
-	go func() {
-		for {
-			now := time.Now().Format(time.RFC1123)
-			app.Event.Emit("time", now)
-			time.Sleep(time.Second)
-		}
-	}()
 
 	go func() {
 		ticker := time.NewTicker(1 * time.Second)

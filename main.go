@@ -6,6 +6,8 @@ import (
 	appsvc "netchecker/internal/app"
 	"netchecker/internal/helpers"
 	"netchecker/internal/logging"
+	"netchecker/internal/singleinstance"
+	"os"
 	"runtime"
 	"time"
 
@@ -24,6 +26,21 @@ func init() {
 
 func main() {
 	AppName := "netchecker"
+
+	// ---- SINGLE INSTANCE (до запуска Wails) ----
+	// Уникальный и стабильный ID для mutex/lock + focus-file.
+	const AppID = "netchecker.singleinstance.v1"
+
+	release, err := singleinstance.Claim(AppID)
+	if err == singleinstance.ErrAlreadyRunning {
+		// попросим первый инстанс поднять окно и выйдем
+		_ = singleinstance.RequestFocus(AppID)
+		os.Exit(0)
+	}
+	if err != nil {
+		log.Fatalf("singleinstance: %v", err)
+	}
+	defer func() { _ = release() }()
 
 	NCApp, err := appsvc.NewApp(AppName)
 	if err != nil {
@@ -81,6 +98,24 @@ func main() {
 		mainWindow.Hide()
 		e.Cancel()
 	})
+
+	// ---- Focus server (слушает на 127.0.0.1:0 и пишет порт в cache-файл) ----
+	stopFocus, err := singleinstance.StartFocusServer(AppID, func() {
+		// Поднять/показать/сфокусировать окно
+		if mainWindow.IsMinimised() {
+			mainWindow.Restore()
+		}
+		if !mainWindow.IsVisible() {
+			mainWindow.Show()
+		}
+		mainWindow.Focus()
+	})
+	if err != nil {
+		// focus - это бонус, не критично
+		log.Printf("focus server disabled: %v", err)
+	} else {
+		defer func() { _ = stopFocus() }()
+	}
 
 	// --- Tray ---
 	tray := app.SystemTray.New()

@@ -6,6 +6,7 @@ import (
 	appsvc "netchecker/internal/app"
 	"netchecker/internal/helpers"
 	"netchecker/internal/logging"
+	"os"
 	"runtime"
 	"time"
 
@@ -44,7 +45,6 @@ func main() {
 
 	var mainWindow *application.WebviewWindow
 
-	// Helpers for consistent window behavior (Mac + Windows)
 	showAndFocus := func() {
 		if mainWindow == nil {
 			return
@@ -62,10 +62,45 @@ func main() {
 		if mainWindow == nil {
 			return
 		}
-		// Delay avoids races with OS/window manager (especially on macOS)
+		// небольшая задержка снижает "гонки" на macOS
 		time.AfterFunc(10*time.Millisecond, func() {
 			mainWindow.Hide()
 		})
+	}
+
+	runCommand := func(args []string) {
+		// args: ["/path/to/netchecker", "start"] etc
+		if len(args) < 2 {
+			showAndFocus()
+			return
+		}
+		cmd := args[1]
+
+		switch cmd {
+		case "start":
+			ok := NCApp.Start()
+			if !ok {
+				log.Printf("start: already running")
+			}
+
+		case "stop":
+			ok := NCApp.Stop()
+			if !ok {
+				log.Printf("stop: not running")
+			}
+
+		case "export":
+			if len(args) < 3 {
+				log.Printf("export: missing path (usage: netchecker export /path/file.csv.gz)")
+				return
+			}
+			if _, err := NCApp.ExportAllToCSVGZ(args[2]); err != nil {
+				log.Printf("export: %v", err)
+			}
+
+		default:
+			showAndFocus()
+		}
 	}
 
 	app := application.New(application.Options{
@@ -79,19 +114,18 @@ func main() {
 			Handler: application.AssetFileServerFS(assets),
 		},
 
-		// IMPORTANT for tray apps on macOS: don't terminate when last window closes
+		// Для tray-режима на macOS обязательно false
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: false,
 		},
 
-		// Built-in single instance (Wails v3alpha)
+		// Built-in single instance (без портов!)
 		SingleInstance: &application.SingleInstanceOptions{
-			UniqueID: "com.netchecker.app", // сделай уникальным (лучше reverse-domain)
-			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
-				// When second instance starts: just bring window to front
-				showAndFocus()
+			UniqueID: "com.netchecker.app",
+			OnSecondInstanceLaunch: func(d application.SecondInstanceData) {
+				// Во 2-м запуске команды приходят сюда
+				runCommand(d.Args)
 			},
-			// (Optional) EncryptionKey / AdditionalData — если понадобится
 		},
 	})
 
@@ -114,13 +148,13 @@ func main() {
 		},
 	})
 
-	// X (close) => hide to tray (not quit)
+	// X => hide to tray
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		e.Cancel()
 		hideToTray()
 	})
 
-	// Minimise (—) => hide to tray (not minimise)
+	// — => hide to tray (чтобы не оставалось minimised)
 	mainWindow.RegisterHook(events.Common.WindowMinimise, func(e *application.WindowEvent) {
 		e.Cancel()
 		hideToTray()
@@ -136,25 +170,20 @@ func main() {
 
 	menu := app.NewMenu()
 
-	// Click/double click on tray icon => show window
 	tray.OnClick(func() { showAndFocus() })
 	tray.OnDoubleClick(func() { showAndFocus() })
 
-	menu.Add("Open").OnClick(func(ctx *application.Context) {
-		showAndFocus()
-	})
-	menu.Add("Hide").OnClick(func(ctx *application.Context) {
-		hideToTray()
-	})
-
-	menu.AddSeparator()
-
-	menu.Add("Quit").OnClick(func(ctx *application.Context) {
-		app.Quit()
-	})
+	menu.Add("Open").OnClick(func(ctx *application.Context) { showAndFocus() })
+	menu.Add("Hide").OnClick(func(ctx *application.Context) { hideToTray() })
+	menu.Add("Quit").OnClick(func(ctx *application.Context) { app.Quit() })
 
 	tray.SetMenu(menu)
-	// NOTE: intentionally NOT using tray.AttachWindow(mainWindow)
+
+	// Если это ПЕРВЫЙ запуск и он был с командой — выполним сразу.
+	// Это полезно, когда GUI ещё не запущен, но ты делаешь: netchecker start
+	if len(os.Args) >= 2 {
+		runCommand(os.Args)
+	}
 
 	go func() {
 		ticker := time.NewTicker(1 * time.Second)

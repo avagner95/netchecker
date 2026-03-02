@@ -159,6 +159,26 @@ func (a *App) ExportAllToCSVGZWithDialog() (string, error) {
 	return st.ExportMergedCSVGZ(context.Background(), path, 0, 0)
 }
 
+func (a *App) ExportAllToCSVGZ(path string) (string, error) {
+	a.mu.RLock()
+	st := a.store
+	a.mu.RUnlock()
+
+	if st == nil {
+		return "", fmt.Errorf("store is nil")
+	}
+	if path == "" {
+		return "", fmt.Errorf("path is empty")
+	}
+
+	// Экспорт в указанный путь
+	out, err := st.ExportMergedCSVGZ(context.Background(), path, 0, 0)
+	if err != nil {
+		return "", err
+	}
+	return out, nil
+}
+
 func (a *App) DashboardPoll(lastBucketMs int64) (*storage.DashboardResponse, error) {
 	a.mu.RLock()
 	st := a.store

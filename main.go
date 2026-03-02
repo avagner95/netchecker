@@ -6,8 +6,6 @@ import (
 	appsvc "netchecker/internal/app"
 	"netchecker/internal/helpers"
 	"netchecker/internal/logging"
-	"netchecker/internal/singleinstance"
-	"os"
 	"runtime"
 	"time"
 
@@ -27,21 +25,6 @@ func init() {
 func main() {
 	AppName := "netchecker"
 
-	// ---- SINGLE INSTANCE (до запуска Wails) ----
-	// Уникальный и стабильный ID для mutex/lock + focus-file.
-	const AppID = "netchecker.singleinstance.v1"
-
-	release, err := singleinstance.Claim(AppID)
-	if err == singleinstance.ErrAlreadyRunning {
-		// попросим первый инстанс поднять окно и выйдем
-		_ = singleinstance.RequestFocus(AppID)
-		os.Exit(0)
-	}
-	if err != nil {
-		log.Fatalf("singleinstance: %v", err)
-	}
-	defer func() { _ = release() }()
-
 	NCApp, err := appsvc.NewApp(AppName)
 	if err != nil {
 		log.Fatal(err)
@@ -59,6 +42,32 @@ func main() {
 		log.Fatal(err)
 	}
 
+	var mainWindow *application.WebviewWindow
+
+	// Helpers for consistent window behavior (Mac + Windows)
+	showAndFocus := func() {
+		if mainWindow == nil {
+			return
+		}
+		if mainWindow.IsMinimised() {
+			mainWindow.Restore()
+		}
+		if !mainWindow.IsVisible() {
+			mainWindow.Show()
+		}
+		mainWindow.Focus()
+	}
+
+	hideToTray := func() {
+		if mainWindow == nil {
+			return
+		}
+		// Delay avoids races with OS/window manager (especially on macOS)
+		time.AfterFunc(10*time.Millisecond, func() {
+			mainWindow.Hide()
+		})
+	}
+
 	app := application.New(application.Options{
 		Name:        AppName,
 		Description: "NetChecker",
@@ -69,12 +78,24 @@ func main() {
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
 		},
+
+		// IMPORTANT for tray apps on macOS: don't terminate when last window closes
 		Mac: application.MacOptions{
-			ApplicationShouldTerminateAfterLastWindowClosed: true,
+			ApplicationShouldTerminateAfterLastWindowClosed: false,
+		},
+
+		// Built-in single instance (Wails v3alpha)
+		SingleInstance: &application.SingleInstanceOptions{
+			UniqueID: "com.netchecker.app", // сделай уникальным (лучше reverse-domain)
+			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
+				// When second instance starts: just bring window to front
+				showAndFocus()
+			},
+			// (Optional) EncryptionKey / AdditionalData — если понадобится
 		},
 	})
 
-	mainWindow := app.Window.NewWithOptions(application.WebviewWindowOptions{
+	mainWindow = app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  "NetChecker",
 		Name:   "main",
 		URL:    "/",
@@ -95,27 +116,15 @@ func main() {
 
 	// X (close) => hide to tray (not quit)
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
-		mainWindow.Hide()
 		e.Cancel()
+		hideToTray()
 	})
 
-	// ---- Focus server (слушает на 127.0.0.1:0 и пишет порт в cache-файл) ----
-	stopFocus, err := singleinstance.StartFocusServer(AppID, func() {
-		// Поднять/показать/сфокусировать окно
-		if mainWindow.IsMinimised() {
-			mainWindow.Restore()
-		}
-		if !mainWindow.IsVisible() {
-			mainWindow.Show()
-		}
-		mainWindow.Focus()
+	// Minimise (—) => hide to tray (not minimise)
+	mainWindow.RegisterHook(events.Common.WindowMinimise, func(e *application.WindowEvent) {
+		e.Cancel()
+		hideToTray()
 	})
-	if err != nil {
-		// focus - это бонус, не критично
-		log.Printf("focus server disabled: %v", err)
-	} else {
-		defer func() { _ = stopFocus() }()
-	}
 
 	// --- Tray ---
 	tray := app.SystemTray.New()
@@ -127,26 +136,15 @@ func main() {
 
 	menu := app.NewMenu()
 
-	// Robust toggle:
-	// - Minimized => Restore+Focus
-	// - Visible (normal) => Hide
-	// - Hidden => Show+Focus
-	menu.Add("Open / Close").OnClick(func(ctx *application.Context) {
+	// Click/double click on tray icon => show window
+	tray.OnClick(func() { showAndFocus() })
+	tray.OnDoubleClick(func() { showAndFocus() })
 
-		// IMPORTANT: minimized windows are still "visible" on Windows
-		if mainWindow.IsMinimised() {
-			mainWindow.Restore()
-			mainWindow.Focus()
-			return
-		}
-
-		if mainWindow.IsVisible() {
-			mainWindow.Hide()
-			return
-		}
-
-		mainWindow.Show()
-		mainWindow.Focus()
+	menu.Add("Open").OnClick(func(ctx *application.Context) {
+		showAndFocus()
+	})
+	menu.Add("Hide").OnClick(func(ctx *application.Context) {
+		hideToTray()
 	})
 
 	menu.AddSeparator()
@@ -156,7 +154,7 @@ func main() {
 	})
 
 	tray.SetMenu(menu)
-	tray.AttachWindow(mainWindow)
+	// NOTE: intentionally NOT using tray.AttachWindow(mainWindow)
 
 	go func() {
 		ticker := time.NewTicker(1 * time.Second)

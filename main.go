@@ -7,16 +7,17 @@ import (
 	"netchecker/internal/helpers"
 	"netchecker/internal/logging"
 	"os"
-	"runtime"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
-	"github.com/wailsapp/wails/v3/pkg/icons"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
+
+//go:embed build/appicon.png
+var appIcon []byte
 
 func init() {
 	application.RegisterEvent[string]("app:size")
@@ -44,11 +45,14 @@ func main() {
 	}
 
 	var mainWindow *application.WebviewWindow
+	var app *application.App
 
 	showAndFocus := func() {
-		if mainWindow == nil {
+		if mainWindow == nil || app == nil {
 			return
 		}
+
+		app.Show()
 		if mainWindow.IsMinimised() {
 			mainWindow.Restore()
 		}
@@ -59,12 +63,14 @@ func main() {
 	}
 
 	hideToTray := func() {
-		if mainWindow == nil {
+		if mainWindow == nil || app == nil {
 			return
 		}
+
 		// небольшая задержка снижает "гонки" на macOS
 		time.AfterFunc(10*time.Millisecond, func() {
 			mainWindow.Hide()
+			app.Hide()
 		})
 	}
 
@@ -103,7 +109,7 @@ func main() {
 		}
 	}
 
-	app := application.New(application.Options{
+	app = application.New(application.Options{
 		Name:        AppName,
 		Description: "NetChecker",
 		Services: []application.Service{
@@ -114,7 +120,6 @@ func main() {
 			Handler: application.AssetFileServerFS(assets),
 		},
 
-		// Для tray-режима на macOS обязательно false
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: false,
 		},
@@ -144,7 +149,7 @@ func main() {
 		},
 
 		Windows: application.WindowsWindow{
-			HiddenOnTaskbar: true,
+			HiddenOnTaskbar: false,
 		},
 	})
 
@@ -162,11 +167,7 @@ func main() {
 
 	// --- Tray ---
 	tray := app.SystemTray.New()
-	if runtime.GOOS == "darwin" {
-		tray.SetTemplateIcon(icons.WailsLogoWhiteTransparent)
-	} else {
-		tray.SetIcon(icons.WailsLogoBlackTransparent)
-	}
+	tray.SetIcon(appIcon)
 
 	menu := app.NewMenu()
 

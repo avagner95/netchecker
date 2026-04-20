@@ -18,6 +18,7 @@ type Options struct {
 	MaxBackups int    // 10
 	Compress   bool   // true
 	AlsoStdout bool   // true in dev
+	Status     string
 }
 
 func Init(opts Options) (string, error) {
@@ -55,8 +56,8 @@ func Init(opts Options) (string, error) {
 	log.SetOutput(w)
 	log.SetFlags(0) // мы рисуем время сами
 
-	Info("logging", "init logfile=%s maxSizeMB=%d maxBackups=%d compress=%t stdout=%t",
-		path, opts.MaxSizeMB, opts.MaxBackups, opts.Compress, opts.AlsoStdout)
+	Info("logging", "init logfile=%s maxSizeMB=%d maxBackups=%d compress=%t stdout=%t status=%s",
+		path, opts.MaxSizeMB, opts.MaxBackups, opts.Compress, opts.AlsoStdout, opts.Status)
 
 	return path, nil
 }

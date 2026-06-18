@@ -39,9 +39,15 @@ type GatewaySettings struct {
 	Enabled bool `json:"enabled"`
 }
 
+type AlfaDiskSettings struct {
+	SharedLink string `json:"sharedLink"`
+	Password   string `json:"password"`
+}
+
 type Config struct {
-	Ping    PingSettings    `json:"ping"`
-	Gateway GatewaySettings `json:"gateway"`
+	Ping     PingSettings     `json:"ping"`
+	Gateway  GatewaySettings  `json:"gateway"`
+	AlfaDisk AlfaDiskSettings `json:"alfaDisk"`
 
 	Targets []Target      `json:"targets"`
 	Trace   TraceTriggers `json:"trace"`

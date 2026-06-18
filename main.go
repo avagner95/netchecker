@@ -31,13 +31,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	args := os.Args
 
-	cmd := "app is running"
-
-	if len(args) >= 2 && args[1] != "" {
-		cmd = args[1]
-	}
+	cmd := NCApp.IsRunning()
 
 	_, err = logging.Init(logging.Options{
 		LogDir:     NCApp.AppDir,
@@ -46,7 +41,7 @@ func main() {
 		MaxBackups: 10,
 		Compress:   true,
 		AlsoStdout: true,
-		Status:     cmd,
+		Running:    cmd,
 	})
 	if err != nil {
 		log.Fatal(err)

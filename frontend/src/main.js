@@ -1,4 +1,4 @@
-import {Events} from "@wailsio/runtime";
+import {Call, Events} from "@wailsio/runtime";
 import {App} from "../bindings/netchecker/internal/app";
 
 let running = false;
@@ -740,6 +740,28 @@ function setValue(id, v) {
     const el = document.getElementById(id);
     if (el) el.value = String(v ?? '');
 }
+
+async function exportAndUploadToConfiguredAlfaDisk() {
+    const candidates = [
+        "netchecker/internal/app.App.ExportAndUploadToConfiguredAlfaDisk",
+        "app.App.ExportAndUploadToConfiguredAlfaDisk",
+        "App.ExportAndUploadToConfiguredAlfaDisk",
+    ];
+
+    let lastErr = null;
+    for (const methodName of candidates) {
+        try {
+            return await Call.ByName(methodName);
+        } catch (e) {
+            lastErr = e;
+            if (!String(e?.message || e).toLowerCase().includes("unknown")) {
+                throw e;
+            }
+        }
+    }
+    throw lastErr;
+}
+
 function initExportCSV() {
     const btn = document.getElementById("btnExportCsv");
 
@@ -758,10 +780,30 @@ function initExportCSV() {
                 return;
             }
 
-            toast`Saved: ${savedPath}`;
+            toast(`Saved: ${savedPath}`);
         } catch (e) {
             console.error(e);
             toast(`Export failed: ${e?.message || e}`);
+        } finally {
+            btn.disabled = false;
+        }
+    });
+}
+
+function initAlfaDiskUpload() {
+    const btn = document.getElementById("btnUploadAlfaDisk");
+    if (!btn) return;
+
+    btn.addEventListener("click", async () => {
+        try {
+            btn.disabled = true;
+            toast("Uploading to AlfaDisk...");
+
+            const filename = await exportAndUploadToConfiguredAlfaDisk();
+            toast(`Uploaded: ${filename}`);
+        } catch (e) {
+            console.error(e);
+            toast(`AlfaDisk upload failed: ${e?.message || e}`);
         } finally {
             btn.disabled = false;
         }
@@ -826,7 +868,7 @@ window.addEventListener("DOMContentLoaded", async (event) => {
     setActiveStatus(running);
     renderTargetsRows()
     initExportCSV();
+    initAlfaDiskUpload();
     initDashboard();
 
 });
-

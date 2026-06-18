@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func DefaultConfig() Config {
@@ -17,6 +18,10 @@ func DefaultConfig() Config {
 		},
 		Gateway: GatewaySettings{
 			Enabled: true,
+		},
+		AlfaDisk: AlfaDiskSettings{
+			SharedLink: "https://alfadisk.alfabank.ru/shared-link/LFqmWlwuVmviYCNFzUfOSloMmfWqIc7sfnppyDv5JOaiKpLa5pCqTc5qvlOW8ZoW",
+			Password:   "5Y7-JeK-r2g-K2S",
 		},
 		Targets: []Target{
 			//External
@@ -52,6 +57,16 @@ func DefaultConfig() Config {
 			CooldownSec: 600,
 		},
 	}
+}
+
+func MergeDefaults(cfg Config, defaults Config) Config {
+	if strings.TrimSpace(cfg.AlfaDisk.SharedLink) == "" {
+		cfg.AlfaDisk.SharedLink = defaults.AlfaDisk.SharedLink
+	}
+	if strings.TrimSpace(cfg.AlfaDisk.Password) == "" {
+		cfg.AlfaDisk.Password = defaults.AlfaDisk.Password
+	}
+	return cfg
 }
 
 func Path(AppName string) (string, error) {

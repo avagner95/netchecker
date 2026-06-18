@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+
 	"os"
 	"path/filepath"
 	"time"
@@ -18,7 +19,7 @@ type Options struct {
 	MaxBackups int    // 10
 	Compress   bool   // true
 	AlsoStdout bool   // true in dev
-	Status     string
+	Running    bool
 }
 
 func Init(opts Options) (string, error) {
@@ -56,8 +57,8 @@ func Init(opts Options) (string, error) {
 	log.SetOutput(w)
 	log.SetFlags(0) // мы рисуем время сами
 
-	Info("logging", "init logfile=%s maxSizeMB=%d maxBackups=%d compress=%t stdout=%t status=%s",
-		path, opts.MaxSizeMB, opts.MaxBackups, opts.Compress, opts.AlsoStdout, opts.Status)
+	Info("logging", "init logfile=%s maxSizeMB=%d maxBackups=%d compress=%t stdout=%t status=%b",
+		path, opts.MaxSizeMB, opts.MaxBackups, opts.Compress, opts.AlsoStdout, opts.Running)
 
 	return path, nil
 }

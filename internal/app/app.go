@@ -9,6 +9,7 @@ import (
 	"netchecker/internal/storage"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -19,6 +20,8 @@ func NewApp(AppName string) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+	cfg = config.MergeDefaults(cfg, config.DefaultConfig())
+	_ = config.Save(path, cfg)
 	dbPath, err := config.DataDBPath(AppName)
 	if err != nil {
 		return nil, err
@@ -90,7 +93,10 @@ func (a *App) Stop() bool {
 func (a *App) GetConfig() config.Config {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
-	return a.cfg
+	cfg := a.cfg
+	cfg.AlfaDisk.SharedLink = ""
+	cfg.AlfaDisk.Password = ""
+	return cfg
 }
 func (a *App) SaveConfig(newCfg config.Config) bool {
 	a.mu.Lock()
@@ -105,6 +111,12 @@ func (a *App) SaveConfig(newCfg config.Config) bool {
 	}
 	if newCfg.Ping.Payload < 0 {
 		newCfg.Ping.Payload = a.cfg.Ping.Payload
+	}
+	if strings.TrimSpace(newCfg.AlfaDisk.SharedLink) == "" {
+		newCfg.AlfaDisk.SharedLink = a.cfg.AlfaDisk.SharedLink
+	}
+	if strings.TrimSpace(newCfg.AlfaDisk.Password) == "" {
+		newCfg.AlfaDisk.Password = a.cfg.AlfaDisk.Password
 	}
 
 	if err := config.Save(a.cfgPath, newCfg); err != nil {

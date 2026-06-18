@@ -111,25 +111,13 @@ func main() {
 			}
 			log.Printf("export: saved %s", outPath)
 
-		case "alfadisk", "upload-alfadisk":
+		case "upload-alfadisk":
 			filename, err := NCApp.ExportAndUploadToConfiguredAlfaDisk()
 			if err != nil {
 				log.Printf("%s: %v", cmd, err)
 				return
 			}
 			log.Printf("%s: uploaded %s", cmd, filename)
-
-		case "upload":
-			if len(args) >= 3 && args[2] == "alfadisk" {
-				filename, err := NCApp.ExportAndUploadToConfiguredAlfaDisk()
-				if err != nil {
-					log.Printf("upload alfadisk: %v", err)
-					return
-				}
-				log.Printf("upload alfadisk: uploaded %s", filename)
-				return
-			}
-			log.Printf("upload: unknown target (usage: netchecker upload alfadisk)")
 
 		case "help", "-h", "--help":
 			log.Print(commandUsage())
@@ -242,5 +230,5 @@ func resolveCommandPath(path string, workingDir string) string {
 }
 
 func commandUsage() string {
-	return fmt.Sprintf("usage: netchecker <command>\ncommands:\n  start\n  stop\n  export <path.csv.gz>\n  alfadisk\n  upload alfadisk")
+	return fmt.Sprintf("usage: netchecker <command>\ncommands:\n  start\n  stop\n  export <path.csv.gz>\n  upload-alfadisk")
 }

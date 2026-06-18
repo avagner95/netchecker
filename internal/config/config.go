@@ -21,7 +21,7 @@ func DefaultConfig() Config {
 		},
 		AlfaDisk: AlfaDiskSettings{
 			SharedLink: "https://alfadisk.alfabank.ru/shared-link/LFqmWlwuVmviYCNFzUfOSloMmfWqIc7sfnppyDv5JOaiKpLa5pCqTc5qvlOW8ZoW",
-			Password:   "5Y7-JeK-r2g-K2S",
+			Password:   "",
 		},
 		Targets: []Target{
 			//External

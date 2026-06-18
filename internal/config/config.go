@@ -35,7 +35,7 @@ func DefaultConfig() Config {
 			//External Bank
 			{Enabled: true, TraceEnabled: true, Name: "MYPC", Address: "217.12.96.114"},
 			{Enabled: true, TraceEnabled: true, Name: "MYCC", Address: "217.12.96.106"},
-			{Enabled: true, TraceEnabled: true, Name: "Telework", Address: "10.229.208.78"},
+			{Enabled: true, TraceEnabled: true, Name: "Telework", Address: "217.12.105.72"},
 			//Internal
 			{Enabled: true, TraceEnabled: true, Name: "VDI", Address: "10.211.3.182"},
 			{Enabled: true, TraceEnabled: true, Name: "DNS VPN1", Address: "10.224.0.5"},

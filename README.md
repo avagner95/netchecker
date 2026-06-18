@@ -1,59 +1,132 @@
-# Welcome to Your New Wails3 Project!
+# NetChecker
 
-Congratulations on generating your Wails3 application! This README will guide you through the next steps to get your project up and running.
+NetChecker is a Wails 3 desktop app for network monitoring. It collects ping and trace data, stores metrics in SQLite,
+shows a live dashboard, and exports collected data to compressed CSV.
 
-## Getting Started
+## Features
 
-1. Navigate to your project directory in the terminal.
+- Start and stop background network monitoring.
+- Monitor configured targets and default gateway availability.
+- Run trace checks on start, packet loss, or high RTT triggers.
+- Export all collected metrics to `.csv.gz`.
+- Upload exported data to AlfaDisk through the configured API shared link.
+- Generate and persist a unique app instance ID on first launch.
 
-2. To run your application in development mode, use the following command:
+## Runtime Data
 
-   ```
-   wails3 dev
-   ```
+The app stores runtime files in the OS user config directory:
 
-   This will start your application and enable hot-reloading for both frontend and backend changes.
+- macOS: `~/Library/Application Support/netchecker`
+- Windows: `%AppData%/netchecker`
+- Linux: `~/.config/netchecker`
 
-3. To build your application for production, use:
+Important files:
 
-   ```
-   wails3 build
-   ```
+- `config.json` - app configuration.
+- `client_id` - generated unique app instance ID.
+- `data/metrics.sqlite` - local metrics database.
+- `netchecker.log` - app log.
+- `exports/` - temporary export files used for AlfaDisk upload.
 
-   This will create a production-ready executable in the `build` directory.
+The generated `client_id` is used as the export file prefix. Example:
 
-## Exploring Wails3 Features
+```text
+NC-A1B2C3D4E5F6_20260618_123456.csv.gz
+```
 
-Now that you have your project set up, it's time to explore the features that Wails3 offers:
+## AlfaDisk Configuration
 
-1. **Check out the examples**: The best way to learn is by example. Visit the `examples` directory in the `v3/examples` directory to see various sample applications.
+AlfaDisk upload settings are read from `config.json` and are not displayed in the UI.
 
-2. **Run an example**: To run any of the examples, navigate to the example's directory and use:
+Example:
 
-   ```
-   go run .
-   ```
+```json
+{
+  "alfaDisk": {
+    "sharedLink": "https://alfadisk.alfabank.ru/shared-link/...",
+    "password": "..."
+  }
+}
+```
 
-   Note: Some examples may be under development during the alpha phase.
+Do not commit real AlfaDisk credentials. For distribution, provide configuration per device or through your deployment
+process.
 
-3. **Explore the documentation**: Visit the [Wails3 documentation](https://v3.wails.io/) for in-depth guides and API references.
+## CLI Commands
 
-4. **Join the community**: Have questions or want to share your progress? Join the [Wails Discord](https://discord.gg/JDdSxwjhGf) or visit the [Wails discussions on GitHub](https://github.com/wailsapp/wails/discussions).
+Commands are handled through Wails single-instance mode. If the app is already running, a second launch passes the
+command to the running instance.
+
+```bash
+netchecker start
+netchecker stop
+netchecker export /path/to/file.csv.gz
+netchecker upload-alfadisk
+```
+
+`upload-alfadisk` exports current metrics to a `.csv.gz` file and uploads it to AlfaDisk using the configured link and
+password.
+
+On macOS, the app binary inside a packaged `.app` is usually:
+
+```bash
+./build/bin/netchecker.app/Contents/MacOS/netchecker upload-alfadisk
+```
+
+Check command results in the log:
+
+```bash
+tail -f "$HOME/Library/Application Support/netchecker/netchecker.log"
+```
+
+## Development
+
+Install dependencies:
+
+```bash
+cd frontend
+npm install
+```
+
+Run in development mode from the project root:
+
+```bash
+wails3 dev
+```
+
+Build frontend only:
+
+```bash
+cd frontend
+npm run build
+```
+
+Build the desktop app:
+
+```bash
+wails3 build
+```
+
+Package the app for distribution:
+
+```bash
+wails3 package
+```
 
 ## Project Structure
 
-Take a moment to familiarize yourself with your project structure:
+```text
+frontend/              UI code built with Vite
+internal/app/          Wails app service, export, AlfaDisk upload, app metadata
+internal/config/       Configuration model and load/save helpers
+internal/monitor/      Ping and trace monitoring logic
+internal/storage/      SQLite storage and CSV export
+build/                 Wails build configuration and platform assets
+main.go                Wails app entry point and CLI command dispatcher
+```
 
-- `frontend/`: Contains your frontend code (HTML, CSS, JavaScript/TypeScript)
-- `main.go`: The entry point of your Go backend
-- `app.go`: Define your application structure and methods here
-- `wails.json`: Configuration file for your Wails project
+## Notes
 
-## Next Steps
-
-1. Modify the frontend in the `frontend/` directory to create your desired UI.
-2. Add backend functionality in `main.go`.
-3. Use `wails3 dev` to see your changes in real-time.
-4. When ready, build your application with `wails3 build`.
-
-Happy coding with Wails3! If you encounter any issues or have questions, don't hesitate to consult the documentation or reach out to the Wails community.
+- Wails version: `github.com/wailsapp/wails/v3`.
+- Current app version is defined in `internal/app/version.go`.
+- AlfaDisk uploads are limited to 60 MB per generated export file.

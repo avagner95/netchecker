@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-// ExportMergedCSVGZ делает один CSV.gz со строками ping/trace по времени.
-// startMs/endMs = 0 -> без фильтра по времени.
 func (s *SQLiteStore) ExportMergedCSVGZ(ctx context.Context, outPath string, startMs, endMs int64) (string, error) {
 	if s == nil || s.db == nil {
 		return "", fmt.Errorf("sqlite store is nil")

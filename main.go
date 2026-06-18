@@ -145,8 +145,15 @@ func main() {
 		SingleInstance: &application.SingleInstanceOptions{
 			UniqueID: "com.netchecker.app",
 			OnSecondInstanceLaunch: func(d application.SecondInstanceData) {
-				// Во 2-м запуске команды приходят сюда
-				runCommand(d.Args, d.WorkingDir)
+
+				go func() {
+					defer func() {
+						if r := recover(); r != nil {
+							log.Printf("command panic: %v", r)
+						}
+					}()
+					runCommand(d.Args, d.WorkingDir)
+				}()
 			},
 		},
 	})

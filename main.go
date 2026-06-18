@@ -2,11 +2,13 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"log"
 	appsvc "netchecker/internal/app"
 	"netchecker/internal/helpers"
 	"netchecker/internal/logging"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -70,14 +72,13 @@ func main() {
 			return
 		}
 
-		// небольшая задержка снижает "гонки" на macOS
 		time.AfterFunc(10*time.Millisecond, func() {
 			mainWindow.Hide()
 			app.Hide()
 		})
 	}
 
-	runCommand := func(args []string) {
+	runCommand := func(args []string, workingDir string) {
 		// args: ["/path/to/netchecker", "start"] etc
 		if len(args) < 2 {
 			showAndFocus()
@@ -103,9 +104,35 @@ func main() {
 				log.Printf("export: missing path (usage: netchecker export /path/file.csv.gz)")
 				return
 			}
-			if _, err := NCApp.ExportAllToCSVGZ(args[2]); err != nil {
+			outPath := resolveCommandPath(args[2], workingDir)
+			if _, err := NCApp.ExportAllToCSVGZ(outPath); err != nil {
 				log.Printf("export: %v", err)
+				return
 			}
+			log.Printf("export: saved %s", outPath)
+
+		case "alfadisk", "upload-alfadisk":
+			filename, err := NCApp.ExportAndUploadToConfiguredAlfaDisk()
+			if err != nil {
+				log.Printf("%s: %v", cmd, err)
+				return
+			}
+			log.Printf("%s: uploaded %s", cmd, filename)
+
+		case "upload":
+			if len(args) >= 3 && args[2] == "alfadisk" {
+				filename, err := NCApp.ExportAndUploadToConfiguredAlfaDisk()
+				if err != nil {
+					log.Printf("upload alfadisk: %v", err)
+					return
+				}
+				log.Printf("upload alfadisk: uploaded %s", filename)
+				return
+			}
+			log.Printf("upload: unknown target (usage: netchecker upload alfadisk)")
+
+		case "help", "-h", "--help":
+			log.Print(commandUsage())
 
 		default:
 			showAndFocus()
@@ -127,12 +154,11 @@ func main() {
 			ApplicationShouldTerminateAfterLastWindowClosed: false,
 		},
 
-		// Built-in single instance (без портов!)
 		SingleInstance: &application.SingleInstanceOptions{
 			UniqueID: "com.netchecker.app",
 			OnSecondInstanceLaunch: func(d application.SecondInstanceData) {
 				// Во 2-м запуске команды приходят сюда
-				runCommand(d.Args)
+				runCommand(d.Args, d.WorkingDir)
 			},
 		},
 	})
@@ -156,19 +182,16 @@ func main() {
 		},
 	})
 
-	// X => hide to tray
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		e.Cancel()
 		hideToTray()
 	})
 
-	// — => hide to tray (чтобы не оставалось minimised)
 	mainWindow.RegisterHook(events.Common.WindowMinimise, func(e *application.WindowEvent) {
 		e.Cancel()
 		hideToTray()
 	})
 
-	// --- Tray ---
 	tray := app.SystemTray.New()
 	tray.SetIcon(appIcon)
 
@@ -183,10 +206,9 @@ func main() {
 
 	tray.SetMenu(menu)
 
-	// Если это ПЕРВЫЙ запуск и он был с командой — выполним сразу.
-	// Это полезно, когда GUI ещё не запущен, но ты делаешь: netchecker start
 	if len(os.Args) >= 2 {
-		runCommand(os.Args)
+		wd, _ := os.Getwd()
+		runCommand(os.Args, wd)
 	}
 
 	go func() {
@@ -210,4 +232,15 @@ func main() {
 	if err := app.Run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func resolveCommandPath(path string, workingDir string) string {
+	if filepath.IsAbs(path) || workingDir == "" {
+		return path
+	}
+	return filepath.Join(workingDir, path)
+}
+
+func commandUsage() string {
+	return fmt.Sprintf("usage: netchecker <command>\ncommands:\n  start\n  stop\n  export <path.csv.gz>\n  alfadisk\n  upload alfadisk")
 }

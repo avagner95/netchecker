@@ -84,6 +84,7 @@ func (a *App) ExportAndUploadToAlfaDisk(uploadURL string) (string, error) {
 	a.mu.RLock()
 	st := a.store
 	appDir := a.AppDir
+	clientID := a.clientID
 	a.mu.RUnlock()
 
 	if st == nil {
@@ -95,7 +96,7 @@ func (a *App) ExportAndUploadToAlfaDisk(uploadURL string) (string, error) {
 		return "", fmt.Errorf("mkdir export dir: %w", err)
 	}
 
-	filename := fmt.Sprintf("netchecker_%s.csv.gz", time.Now().Format("20060102_150405"))
+	filename := fmt.Sprintf("%s_%s.csv.gz", safeFilenamePrefix(clientID), time.Now().Format("20060102_150405"))
 	localPath := filepath.Join(exportDir, filename)
 	defer func() { _ = os.Remove(localPath) }()
 

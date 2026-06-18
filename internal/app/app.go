@@ -31,15 +31,23 @@ func NewApp(AppName string) (*App, error) {
 		return nil, err
 	}
 	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return nil, fmt.Errorf("os.UserConfigDir: %w", err)
+	}
 	appDir := filepath.Join(configDir, AppName)
+	clientID, err := LoadOrCreateClientID(appDir)
+	if err != nil {
+		return nil, err
+	}
 	a := &App{
-		cfg:     cfg,
-		version: Version,
-		running: false,
-		AppDir:  appDir,
-		cfgPath: path,
-		DbPath:  dbPath,
-		store:   st,
+		cfg:      cfg,
+		version:  Version,
+		clientID: clientID,
+		running:  false,
+		AppDir:   appDir,
+		cfgPath:  path,
+		DbPath:   dbPath,
+		store:    st,
 	}
 	a.mon = monitor.NewMonitor(st, cfg)
 	return a, nil
@@ -140,6 +148,7 @@ func (a *App) ExportAllToCSVGZWithDialog() (string, error) {
 	a.mu.RLock()
 	st := a.store
 	app := a.wails
+	clientID := a.clientID
 	a.mu.RUnlock()
 
 	if st == nil {
@@ -158,7 +167,7 @@ func (a *App) ExportAllToCSVGZWithDialog() (string, error) {
 	}
 
 	path, err := app.Dialog.SaveFile().
-		SetFilename(fmt.Sprintf("netchecker_%s.csv.gz", time.Now().Format("20060102_150405"))).
+		SetFilename(fmt.Sprintf("%s_%s.csv.gz", safeFilenamePrefix(clientID), time.Now().Format("20060102_150405"))).
 		AddFilter("GZip CSV", "*.csv.gz").
 		PromptForSingleSelection()
 	if err != nil {

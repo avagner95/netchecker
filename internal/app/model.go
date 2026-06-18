@@ -11,16 +11,17 @@ import (
 )
 
 type App struct {
-	mu      sync.RWMutex
-	ctx     context.Context
-	wails   *application.App
-	version string
-	running bool
-	AppDir  string
-	cfg     config.Config
-	cfgPath string
-	DbPath  string
-	store   *storage.SQLiteStore
-	mon     *monitor.Monitor
-	cancel  context.CancelFunc
+	mu       sync.RWMutex
+	ctx      context.Context
+	wails    *application.App
+	version  string
+	clientID string
+	running  bool
+	AppDir   string
+	cfg      config.Config
+	cfgPath  string
+	DbPath   string
+	store    *storage.SQLiteStore
+	mon      *monitor.Monitor
+	cancel   context.CancelFunc
 }

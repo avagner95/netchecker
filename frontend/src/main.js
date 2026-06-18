@@ -741,6 +741,34 @@ function setValue(id, v) {
     if (el) el.value = String(v ?? '');
 }
 
+async function getAppInfo() {
+    const candidates = [
+        "netchecker/internal/app.App.GetAppInfo",
+        "app.App.GetAppInfo",
+        "App.GetAppInfo",
+    ];
+
+    let lastErr = null;
+    for (const methodName of candidates) {
+        try {
+            return await Call.ByName(methodName);
+        } catch (e) {
+            lastErr = e;
+            if (!String(e?.message || e).toLowerCase().includes("unknown")) {
+                throw e;
+            }
+        }
+    }
+    throw lastErr;
+}
+
+function renderAppInfo(info) {
+    const clientEl = document.getElementById("sb_client_id");
+    const verEl = document.getElementById("sb_ver");
+    if (clientEl) clientEl.textContent = info?.clientId || "";
+    if (verEl && info?.version) verEl.textContent = `v${info.version}`;
+}
+
 async function exportAndUploadToConfiguredAlfaDisk() {
     const candidates = [
         "netchecker/internal/app.App.ExportAndUploadToConfiguredAlfaDisk",
@@ -812,6 +840,11 @@ function initAlfaDiskUpload() {
 
 window.addEventListener("DOMContentLoaded", async (event) => {
     running = await App.IsRunning();
+    try {
+        renderAppInfo(await getAppInfo());
+    } catch (e) {
+        console.error("GetAppInfo failed:", e);
+    }
     cfg = await  App.GetConfig()
     setFieldsEnabled('loss_fields', !!cfg.trace.loss.enabled);
     setFieldsEnabled('rtt_fields', !!cfg.trace.highRtt.enabled);
